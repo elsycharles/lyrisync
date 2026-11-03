@@ -69,6 +69,16 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
     void ctrl.play();
   };
 
+  const setAndNext = (id: string) => {
+    const index = lines.findIndex((l) => l.id === id);
+    setTime(id, ctrl.currentTime());
+    const next = lines[index + 1];
+    setSelectedId(next ? next.id : null);
+  };
+  // Read by the keyboard handler, which is not re-installed on every render.
+  const setAndNextRef = useRef(setAndNext);
+  setAndNextRef.current = setAndNext;
+
   const setTime = (id: string, time: number | null) =>
     onEdit(lines.map((l) => (l.id === id ? { ...l, time: time === null ? null : roundCs(time), source: time === null ? null : 'manual' } : l)));
 
@@ -87,6 +97,12 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
+      if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (!selectedId) return;
+        e.preventDefault();
+        setAndNextRef.current(selectedId);
+        return;
+      }
       if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
       if (e.altKey || e.metaKey || e.ctrlKey) return;
       const index = lines.findIndex((l) => l.id === selectedId);
@@ -182,7 +198,7 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
                 <LineTools
                   line={line}
                   onNudge={(d) => nudge(line.id, d)}
-                  onSetHere={() => setTime(line.id, ctrl.currentTime())}
+                  onSetNext={() => setAndNext(line.id)}
                   onPlay={() => playFrom(line)}
                   onClear={() => setTime(line.id, null)}
                 />

@@ -135,12 +135,16 @@ describe('fixing lines on the result screen', () => {
     expect(ctrl.playing).toBe(true);
   });
 
-  it('sets the selected line to the playhead, including an untimed one', async () => {
+  it('sets the selected line to the playhead and moves to the next one, untimed lines included', async () => {
     const ctrl = new FakeAudio();
     render(<Editable ctrl={ctrl} />);
-    await userEvent.click(lineButton('You already know how it ends'));
+    await userEvent.click(lineButton('The harbour falls asleep behind us'));
+    ctrl.now = 14.6;
+    await userEvent.click(screen.getByRole('button', { name: 'Set & next' }));
+    expect(latest[1]).toMatchObject({ time: 14.6, source: 'manual' });
+    expect(lineButton('You already know how it ends')).toHaveAttribute('aria-pressed', 'true');
     ctrl.now = 18.903;
-    await userEvent.click(screen.getByRole('button', { name: 'Set here' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Set & next' }));
     expect(latest[2]).toMatchObject({ time: 18.9, source: 'manual' });
   });
 

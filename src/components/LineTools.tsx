@@ -9,14 +9,14 @@ const NUDGES_AFTER = [0.1, 1];
 interface Props {
   line: LyricLine;
   onNudge: (delta: number) => void;
-  /** Gives the line the current playback position. */
-  onSetHere: () => void;
+  /** Gives the line the current playback position, then selects the next line. */
+  onSetNext: () => void;
   onPlay: () => void;
   onClear?: () => void;
 }
 
 /** The tools of the selected line: nudge ±0.1 s / ±1 s, set to the playhead, listen, clear. */
-export function LineTools({ line, onNudge, onSetHere, onPlay, onClear }: Props) {
+export function LineTools({ line, onNudge, onSetNext, onPlay, onClear }: Props) {
   const { t } = useI18n();
   const untimed = line.time === null;
   const nudgeButton = (d: number) => (
@@ -35,8 +35,8 @@ export function LineTools({ line, onNudge, onSetHere, onPlay, onClear }: Props) 
         {NUDGES_AFTER.map(nudgeButton)}
       </div>
       <div className="line-tools__actions">
-        <button type="button" className="tool-btn" onClick={onSetHere} title={t.editor.setHereHint}>
-          <TargetIcon size={14} /> {t.editor.setHere}
+        <button type="button" className="tool-btn tool-btn--main" onClick={onSetNext} title={t.editor.setNextHint}>
+          <TargetIcon size={14} /> {t.editor.setNext}
         </button>
         <button type="button" className="tool-btn" onClick={onPlay} disabled={untimed} aria-label={t.editor.playFrom} title={t.editor.playFrom}>
           <PlayIcon size={13} /> {t.editor.listen}

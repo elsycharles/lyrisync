@@ -153,15 +153,21 @@ describe('adjust mode', () => {
     expect(latest.map((l) => l.time)).toEqual([10, 14.8, 19.8]);
   });
 
-  it('sets a line to the playhead and clears it', async () => {
+  it('sets a line to the playhead, moves to the next one, and clears', async () => {
     const ctrl = new FakeAudio();
-    render(<Harness initial={mk(10, 15)} ctrl={ctrl} />);
+    render(<Harness initial={mk(10, 15, 20)} ctrl={ctrl} />);
     await userEvent.click(screen.getByRole('button', { name: 'Select the line “Line 1”' }));
     ctrl.now = 11.111;
-    await userEvent.click(screen.getByRole('button', { name: 'Set here' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Set & next' }));
     expect(latest[0]!.time).toBe(11.11);
+    // The next line is selected, so pressing again times it.
+    expect(screen.getByRole('button', { name: 'Select the line “Line 2”' })).toHaveAttribute('aria-pressed', 'true');
+    ctrl.now = 15.5;
+    fireEvent.keyDown(document.body, { key: 'c' });
+    expect(latest[1]!.time).toBe(15.5);
+    expect(screen.getByRole('button', { name: 'Select the line “Line 3”' })).toHaveAttribute('aria-pressed', 'true');
     await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
-    expect(latest[0]!.time).toBeNull();
+    expect(latest[2]!.time).toBeNull();
     expect(screen.getByText('needs timing')).toBeInTheDocument();
   });
 

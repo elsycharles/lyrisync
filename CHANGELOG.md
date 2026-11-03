@@ -29,6 +29,9 @@ All notable changes to this project are documented here. The format follows
   - lines can be fixed right on the result screen: click a line for its tools
     (±0.1 s / ±1 s, set to the playhead, listen), double-click to hear it, keyboard
     shortcuts shown as key caps, and undo; double-click also plays a line in Adjust;
+  - "Set & next" (button or C key) sets the selected line to the playback position and
+    moves to the next line, so lines can be timed one after the other while the music
+    plays, on the result screen and in Adjust;
   - Adjust: grouped nudge control around the line's time, the playing line marked by
     a mint time pill, a batch bar that follows the list, "Done" as the main action;
   - checked for overflow from 320 px to 1440 px wide; keyboard tips are hidden on
@@ -46,6 +49,9 @@ All notable changes to this project are documented here. The format follows
   tracks with LRCLIB references (`scripts/fetch-lrclib.mjs`).
 
 ### Fixed
+
+- The sync progress bar no longer jumps backwards (stage weights, growing download
+  totals and late worker events are folded so that progress only goes up).
 
 - "Auto" language translated French songs to English (0 % confidence): the language is
   now read from the lyrics and always passed explicitly.
