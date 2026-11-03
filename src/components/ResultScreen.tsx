@@ -10,7 +10,7 @@ import { LyricList, isToCheck } from './LyricList';
 import { currentLineIndex, playLine } from './LineTools';
 import { LyricsStage } from './LyricsStage';
 import { Player } from './Player';
-import { modKey, Shortcuts } from './Shortcuts';
+import { lineShortcuts, modKey, Shortcuts } from './Shortcuts';
 
 interface Props {
   lines: LyricLine[];
@@ -156,17 +156,7 @@ export function ResultScreen(props: Props) {
           <span className="lines-hint--pointer">{t.result.listHint}</span>
           <span className="lines-hint--touch">{t.result.listHintTouch}</span>
         </p>
-        <Shortcuts
-          items={[
-            { keys: [t.result.keys.space], label: t.result.shortcuts.playPause },
-            { keys: ['↑', '↓'], label: t.result.shortcuts.pick },
-            { keys: ['←', '→'], label: t.result.shortcuts.nudge },
-            { keys: [t.result.keys.enter], label: t.result.shortcuts.listen },
-            { keys: ['C'], label: t.result.shortcuts.setHere },
-            { keys: ['⌫'], label: t.result.shortcuts.previous },
-            { keys: [modKey(t.result.keys.ctrl), 'Z'], label: t.result.shortcuts.undo },
-          ]}
-        />
+        <Shortcuts items={lineShortcuts(t, [{ keys: [modKey(t.result.keys.ctrl), 'Z'], label: t.result.shortcuts.undo }])} />
         <LyricList
           lines={lines}
           ctrl={ctrl}

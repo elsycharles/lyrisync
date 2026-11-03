@@ -21,6 +21,7 @@ export function parseLrc(text: string): ParsedLrc {
   let offsetMs = 0;
   const timed: { time: number; text: string; order: number }[] = [];
   const untimed: { text: string; order: number }[] = [];
+  const ends: number[] = [];
   let order = 0;
 
   for (const rawLine of text.split(/\r?\n/)) {
@@ -62,8 +63,11 @@ export function parseLrc(text: string): ParsedLrc {
       if (lyric) untimed.push({ text: lyric, order: order++ });
       continue;
     }
-    // An empty timed line marks the end of the previous one (instrumental break): skip it.
-    if (!lyric) continue;
+    // An empty timed line marks the end of the line before it: a pause.
+    if (!lyric) {
+      ends.push(...times);
+      continue;
+    }
     for (const t of times) timed.push({ time: t, text: lyric, order: order++ });
   }
 
@@ -71,12 +75,20 @@ export function parseLrc(text: string): ParsedLrc {
   const shift = offsetMs / 1000;
   timed.sort((a, b) => a.time - b.time || a.order - b.order);
 
+  const at = (t: number) => Math.max(0, Math.round((t - shift) * 100) / 100);
   const lines: LyricLine[] = timed.map((l) => ({
     id: createId(),
     text: l.text,
-    time: Math.max(0, Math.round((l.time - shift) * 100) / 100),
+    time: at(l.time),
     source: 'import',
   }));
+  // Each pause ends the last line that started before it.
+  for (const e of ends) {
+    let k = -1;
+    for (let i = 0; i < timed.length; i++) if (timed[i]!.time < e) k = i;
+    const line = lines[k];
+    if (line && (line.end === undefined || at(e) < line.end)) line.end = at(e);
+  }
   // Untimed lines go after timed ones, in file order; the editor shows them as "needs timing".
   for (const l of untimed) lines.push({ id: createId(), text: l.text, time: null, source: null });
 
@@ -117,7 +129,14 @@ export function serializeLrc(lines: LyricLine[], options: SerializeOptions = {})
     .filter((x): x is { l: LyricLine & { time: number }; i: number } => x.l.time !== null)
     .sort((a, b) => a.l.time - b.l.time || a.i - b.i);
 
-  for (const { l } of timed) out.push(`[${formatTimestamp(l.time)}]${l.text}`);
+  timed.forEach(({ l }, k) => {
+    out.push(`[${formatTimestamp(l.time)}]${l.text}`);
+    // A pause before the next line: an empty timed line, which players show as a blank.
+    const next = timed[k + 1]?.l.time;
+    if (l.end !== undefined && l.end > l.time && (next === undefined || l.end < next - 0.01)) {
+      out.push(`[${formatTimestamp(l.end)}]`);
+    }
+  });
   return out.join('\n') + '\n';
 }
 

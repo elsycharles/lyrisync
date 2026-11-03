@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { usePlaybackSelector } from '../audio/usePlayback';
+import { spaceToggleProps, useSpaceToggle } from '../hooks/useSpaceToggle';
 import { useI18n } from '../i18n/useI18n';
 import { parseLrc } from '../lib/lrc';
 import { formatDecimal, parseDecimal } from '../lib/number';
 import { formatTimestamp, roundCs } from '../lib/time';
-import { activeLineIndex, nudgeLine, previousTimedIndex, shiftLines } from '../lib/timing';
-import { FileIcon, UndoIcon } from './icons';
-import { LineTools, playLine } from './LineTools';
-import { Shortcuts } from './Shortcuts';
+import { activeLineIndex, pauseAfter, shiftLines } from '../lib/timing';
 import type { LrcMetadata, LyricLine } from '../lib/types';
-
+import { FileIcon, UndoIcon } from './icons';
+import { LineTools } from './LineTools';
+import { PauseMark } from './LyricList';
+import { lineShortcuts, modKey, Shortcuts } from './Shortcuts';
+import { useLineEditing } from './useLineEditing';
 
 interface Props {
   lines: LyricLine[];
@@ -22,7 +24,7 @@ interface Props {
   onDone: () => void;
 }
 
-/** Fine tuning: select a line and nudge it, or tick several and shift the whole block. */
+/** Fine tuning: select a line and time it, or tick several and shift the whole block. */
 export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, onDone }: Props) {
   const { t, lang } = useI18n();
   const [selectedId, setSelectedId] = useState<string | null>(() => lines.find((l) => l.time === null)?.id ?? null);
@@ -36,6 +38,9 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
 
   const select = useCallback((time: number) => activeLineIndex(lines, time), [lines]);
   const active = usePlaybackSelector(ctrl, select);
+  const edit = useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSelectedId });
+  const toggle = useCallback(() => ctrl.toggle(), [ctrl]);
+  useSpaceToggle(toggle);
 
   // Drop ticks for lines that no longer exist (after an import or an undo).
   const liveTicked = useMemo(() => {
@@ -54,38 +59,8 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
     return flags;
   }, [lines]);
 
-  const nudge = useCallback(
-    (id: string, delta: number) => {
-      const line = lines.find((l) => l.id === id);
-      if (line?.time === null || !line) return;
-      onEdit(nudgeLine(lines, id, delta));
-    },
-    [lines, onEdit],
-  );
-
-  const playFrom = (line: LyricLine) => playLine(ctrl, line);
-
-  const goPrevious = (id: string) => {
-    const line = lines[previousTimedIndex(lines, lines.findIndex((l) => l.id === id))];
-    if (!line) return;
-    setSelectedId(line.id);
-    playLine(ctrl, line);
-  };
-  const goPreviousRef = useRef(goPrevious);
-  goPreviousRef.current = goPrevious;
-
-  const setAndNext = (id: string) => {
-    const index = lines.findIndex((l) => l.id === id);
-    setTime(id, ctrl.currentTime());
-    const next = lines[index + 1];
-    setSelectedId(next ? next.id : null);
-  };
-  // Read by the keyboard handler, which is not re-installed on every render.
-  const setAndNextRef = useRef(setAndNext);
-  setAndNextRef.current = setAndNext;
-
-  const setTime = (id: string, time: number | null) =>
-    onEdit(lines.map((l) => (l.id === id ? { ...l, time: time === null ? null : roundCs(time), source: time === null ? null : 'manual' } : l)));
+  const clearTime = (id: string) =>
+    onEdit(lines.map((l) => (l.id === id ? { ...l, time: null, end: undefined, source: null } : l)));
 
   const toggleTick = (id: string) =>
     setTicked(() => {
@@ -96,41 +71,6 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
     });
 
   const allTicked = liveTicked.size === lines.length && lines.length > 0;
-
-  // Keyboard: ↑/↓ pick a line, ←/→ nudge it (Shift for a full second).
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
-      if (e.key === 'Backspace' && selectedId) {
-        e.preventDefault();
-        goPreviousRef.current(selectedId);
-        return;
-      }
-      if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        if (!selectedId) return;
-        e.preventDefault();
-        setAndNextRef.current(selectedId);
-        return;
-      }
-      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
-      if (e.altKey || e.metaKey || e.ctrlKey) return;
-      const index = lines.findIndex((l) => l.id === selectedId);
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        const next = Math.min(lines.length - 1, Math.max(0, index + (e.key === 'ArrowUp' ? -1 : 1)));
-        const line = lines[next];
-        if (line) setSelectedId(line.id);
-        return;
-      }
-      if (selectedId) {
-        e.preventDefault();
-        nudge(selectedId, (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 1 : 0.1));
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [lines, nudge, selectedId]);
 
   // Keep the selected line in view when it changes from the keyboard.
   useEffect(() => {
@@ -166,9 +106,10 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
         </button>
       </div>
 
-      <ol className="lines lines--scroll" ref={listRef} aria-label={t.result.linesLabel}>
+      <ol className="lines lines--scroll" ref={listRef} aria-label={t.result.linesLabel} {...spaceToggleProps(toggle)}>
         {lines.map((line, i) => {
           const isSelected = line.id === selectedId;
+          const pause = pauseAfter(lines, i);
           const isTicked = liveTicked.has(line.id);
           const classes = [
             'line',
@@ -193,7 +134,7 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
                   onClick={() => setSelectedId(isSelected ? null : line.id)}
                   onDoubleClick={() => {
                     setSelectedId(line.id);
-                    playFrom(line);
+                    edit.play(line);
                   }}
                   aria-pressed={isSelected}
                   aria-label={t.editor.selectLine(line.text)}
@@ -202,16 +143,22 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
                   <span className="line__text">{line.text}</span>
                   {line.time === null && <span className="flag">{t.editor.needsTiming}</span>}
                   {outOfOrder.has(line.id) && <span className="flag flag--warn">{t.editor.outOfOrder}</span>}
+                  {pause !== null && <PauseMark time={pause} label={t.editor.endsAt(formatTimestamp(pause))} />}
                 </button>
               </div>
               {isSelected && (
                 <LineTools
                   line={line}
-                  onNudge={(d) => nudge(line.id, d)}
-                  onSetNext={() => setAndNext(line.id)}
-                  onPlay={() => playFrom(line)}
-                  onPrevious={() => goPrevious(line.id)}
-                  onClear={() => setTime(line.id, null)}
+                  pause={pause}
+                  onNudge={(d) => edit.nudge(line.id, d)}
+                  onSetStart={() => edit.setStart(line.id)}
+                  onPause={() => edit.pause(line.id)}
+                  onSetNext={() => edit.endAndNext(line.id)}
+                  onRemovePause={() => edit.removePause(line.id)}
+                  onPlay={() => edit.play(line)}
+                  onPrevious={edit.previous}
+                  onNext={edit.next}
+                  onClear={() => clearTime(line.id)}
                 />
               )}
             </li>
@@ -260,15 +207,7 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
           {t.editor.importEmpty}
         </p>
       )}
-      <Shortcuts
-        items={[
-          { keys: ['↑', '↓'], label: t.result.shortcuts.pick },
-          { keys: ['←', '→'], label: t.result.shortcuts.nudge },
-          { keys: ['C'], label: t.result.shortcuts.setHere },
-          { keys: ['⌫'], label: t.result.shortcuts.previous },
-          { keys: [t.result.keys.space], label: t.result.shortcuts.playPause },
-        ]}
-      />
+      <Shortcuts items={lineShortcuts(t, [{ keys: [modKey(t.result.keys.ctrl), 'Z'], label: t.result.shortcuts.undo }])} />
 
       <div className="editor-actions">
         <button type="button" className="btn btn--ghost btn--small" onClick={() => fileRef.current?.click()}>

@@ -151,7 +151,7 @@ export function TapPanel({ lines, ctrl, onEdit, onUndo, onDone }: Props) {
           </>
         ) : (
           <>
-            <span className="eyebrow">{t.editor.next}</span>
+            <span className="eyebrow">{t.editor.upNext}</span>
             <span className="currentline">{current?.text}</span>
             <button
               ref={buttonRef}

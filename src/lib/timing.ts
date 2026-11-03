@@ -4,8 +4,8 @@ import type { LyricLine } from './types';
 /** Gap assumed between lines when nothing else is known. */
 const DEFAULT_GAP = 3;
 
-/** Index of the line being sung at time `t`, or -1 before the first timed line. */
-export function activeLineIndex(lines: readonly LyricLine[], t: number): number {
+/** Index of the last line that has started at time `t`, pauses ignored; -1 before the first. */
+export function lastStartedIndex(lines: readonly LyricLine[], t: number): number {
   let best = -1;
   let bestTime = -Infinity;
   for (let i = 0; i < lines.length; i++) {
@@ -18,18 +18,94 @@ export function activeLineIndex(lines: readonly LyricLine[], t: number): number 
   return best;
 }
 
-/** Moves one line by `delta` seconds (clamped at 0). */
-export function nudgeLine(lines: LyricLine[], id: string, delta: number): LyricLine[] {
-  return shiftLines(lines, new Set([id]), delta);
+/**
+ * Index of the line being sung at time `t`: the last line that started, unless it has
+ * ended (a pause before the next line). -1 before the first line and during pauses.
+ */
+export function activeLineIndex(lines: readonly LyricLine[], t: number): number {
+  const i = lastStartedIndex(lines, t);
+  if (i < 0) return -1;
+  const end = lines[i]!.end;
+  return end !== undefined && t >= end ? -1 : i;
 }
 
-/** Moves every line in `ids` by `delta` seconds. Untimed lines are left alone. */
+/** The line with a new start; an end that would now come first is dropped. */
+export function withStart(line: LyricLine, time: number): LyricLine {
+  const start = roundCs(Math.max(0, time));
+  const end = line.end !== undefined && line.end > start ? line.end : undefined;
+  return { ...line, time: start, end, source: 'manual' };
+}
+
+/** Moves one line's start by `delta` seconds (clamped at 0); its end stays put. */
+export function nudgeLine(lines: LyricLine[], id: string, delta: number): LyricLine[] {
+  return lines.map((l) => (l.id === id && l.time !== null ? withStart(l, l.time + delta) : l));
+}
+
+/** Moves every line in `ids` by `delta` seconds, ends included. Untimed lines are left alone. */
 export function shiftLines(lines: LyricLine[], ids: ReadonlySet<string>, delta: number): LyricLine[] {
   return lines.map((l) =>
     ids.has(l.id) && l.time !== null
-      ? { ...l, time: roundCs(Math.max(0, l.time + delta)), source: 'manual' }
+      ? {
+          ...l,
+          time: roundCs(Math.max(0, l.time + delta)),
+          end: l.end === undefined ? undefined : roundCs(Math.max(0, l.end + delta)),
+          source: 'manual',
+        }
       : l,
   );
+}
+
+/**
+ * "This line ends now, the next one starts now" — what "Set & next" does, pressed as a
+ * line finishes. On the last line it only sets its end.
+ */
+export function endAndStartNext(lines: LyricLine[], index: number, t: number): LyricLine[] {
+  const line = lines[index];
+  if (!line) return lines;
+  const time = roundCs(Math.max(0, t));
+  const out = lines.slice();
+  const next = out[index + 1];
+  if (next) {
+    out[index] = { ...line, end: undefined };
+    out[index + 1] = withStart(next, time);
+  } else if (line.time === null || time > line.time) {
+    out[index] = { ...line, end: time };
+  }
+  return out;
+}
+
+/**
+ * "This line ends now, and there is silence until the next one" — a pause. The next line
+ * cannot start inside that silence: if it was placed earlier, it now starts at the end of
+ * the pause, and the pause shows once its real start is set. Nothing happens if the line
+ * has no time yet or `t` is not after its start.
+ */
+export function endWithPause(lines: LyricLine[], index: number, t: number): LyricLine[] {
+  const line = lines[index];
+  if (!line || line.time === null) return lines;
+  const time = roundCs(Math.max(0, t));
+  if (time <= line.time) return lines;
+  const out = lines.slice();
+  out[index] = { ...line, end: time };
+  const next = lines[index + 1];
+  if (next && next.time !== null && next.time < time) out[index + 1] = withStart(next, time);
+  return out;
+}
+
+/** The line lasts until the next one again. */
+export function removePause(lines: LyricLine[], id: string): LyricLine[] {
+  return lines.map((l) => (l.id === id && l.end !== undefined ? { ...l, end: undefined, source: 'manual' } : l));
+}
+
+/**
+ * When line `index` stops being sung, if a silence follows before the next timed line;
+ * null when it simply runs into the next one.
+ */
+export function pauseAfter(lines: readonly LyricLine[], index: number): number | null {
+  const line = lines[index];
+  if (!line || line.time === null || line.end === undefined || line.end <= line.time) return null;
+  const next = lines[nextTimedIndex(lines, index)];
+  return next && next.time! <= line.end + 0.01 ? null : line.end;
 }
 
 export function countUntimed(lines: readonly LyricLine[]): number {

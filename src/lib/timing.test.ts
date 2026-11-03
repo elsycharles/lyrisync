@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { activeLineIndex, countUntimed, fillMissingTimes, nextTimedIndex, nudgeLine, previousTimedIndex, shiftLines } from './timing';
+import {
+  activeLineIndex,
+  countUntimed,
+  endAndStartNext,
+  endWithPause,
+  fillMissingTimes,
+  lastStartedIndex,
+  nextTimedIndex,
+  nudgeLine,
+  pauseAfter,
+  previousTimedIndex,
+  removePause,
+  shiftLines,
+} from './timing';
 import type { LyricLine } from './types';
 
 const mk = (times: (number | null)[]): LyricLine[] =>
@@ -83,5 +96,65 @@ describe('previousTimedIndex / nextTimedIndex', () => {
   it('works from before the first line', () => {
     expect(nextTimedIndex(lines, -1)).toBe(0);
     expect(previousTimedIndex(lines, -1)).toBe(-1);
+  });
+});
+
+describe('line ends and pauses', () => {
+  const withEnds = (): LyricLine[] => [
+    { id: 'a', text: 'a', time: 10, source: 'auto' },
+    { id: 'b', text: 'b', time: 14, source: 'auto', end: 16 },
+    { id: 'c', text: 'c', time: 22, source: 'auto' },
+  ];
+
+  it('shows no active line during a pause, but knows which line was last', () => {
+    const lines = withEnds();
+    expect(activeLineIndex(lines, 15)).toBe(1);
+    expect(activeLineIndex(lines, 18)).toBe(-1);
+    expect(lastStartedIndex(lines, 18)).toBe(1);
+    expect(activeLineIndex(lines, 23)).toBe(2);
+  });
+
+  it('"set & next" ends the line and starts the next one at the same moment', () => {
+    const out = endAndStartNext(withEnds(), 0, 13.456);
+    expect(out[0]).toMatchObject({ time: 10, end: undefined });
+    expect(out[1]).toMatchObject({ time: 13.46, end: 16, source: 'manual' });
+    // On the last line it only ends it.
+    expect(endAndStartNext(withEnds(), 2, 25)[2]).toMatchObject({ time: 22, end: 25 });
+  });
+
+  it('a pause ends the line and leaves the next start alone', () => {
+    const out = endWithPause(withEnds(), 0, 12.5);
+    expect(out[0]).toMatchObject({ time: 10, end: 12.5 });
+    expect(out[1]!.time).toBe(14);
+    expect(pauseAfter(out, 0)).toBe(12.5);
+    // The next line cannot start inside the silence: it waits for the end of it…
+    const tight = endWithPause(withEnds(), 0, 15);
+    expect(tight[0]!.end).toBe(15);
+    expect(tight[1]!.time).toBe(15);
+    expect(pauseAfter(tight, 0)).toBeNull();
+    // …and the pause shows once that line gets its real start.
+    expect(pauseAfter(nudgeLine(tight, 'b', 2), 0)).toBe(15);
+    // Ending a line before it starts, or an untimed one, does nothing.
+    expect(endWithPause(withEnds(), 2, 20)).toEqual(withEnds());
+    const untimed: LyricLine[] = [{ id: 'x', text: 'x', time: null, source: null }];
+    expect(endWithPause(untimed, 0, 3)).toBe(untimed);
+  });
+
+  it('finds and removes pauses', () => {
+    const lines = withEnds();
+    expect(lines.map((_, i) => pauseAfter(lines, i))).toEqual([null, 16, null]);
+    // The last line can end too: the outro.
+    expect(pauseAfter(endAndStartNext(lines, 2, 25), 2)).toBe(25);
+    const removed = removePause(lines, 'b');
+    expect(removed[1]).toMatchObject({ time: 14, end: undefined, source: 'manual' });
+    expect(pauseAfter(removed, 1)).toBeNull();
+    expect(removePause(lines, 'a')[0]).toBe(lines[0]);
+  });
+
+  it('nudging a start keeps the end unless it would come first; shifting moves both', () => {
+    const lines = withEnds();
+    expect(nudgeLine(lines, 'b', 1)[1]).toMatchObject({ time: 15, end: 16 });
+    expect(nudgeLine(lines, 'b', 3)[1]).toMatchObject({ time: 17, end: undefined });
+    expect(shiftLines(lines, new Set(['b']), -1)[1]).toMatchObject({ time: 13, end: 15 });
   });
 });

@@ -23,6 +23,7 @@ class FakeAudio extends AudioController {
   override seek(t: number) {
     this.now = t;
     this.time = t;
+    this.emit();
   }
 }
 
@@ -153,22 +154,64 @@ describe('adjust mode', () => {
     expect(latest.map((l) => l.time)).toEqual([10, 14.8, 19.8]);
   });
 
-  it('sets a line to the playhead, moves to the next one, and clears', async () => {
+  it('"set & next" ends the line and starts the next one; clears', async () => {
     const ctrl = new FakeAudio();
     render(<Harness initial={mk(10, 15, 20)} ctrl={ctrl} />);
     await userEvent.click(screen.getByRole('button', { name: 'Select the line “Line 1”' }));
-    ctrl.now = 11.111;
+    ctrl.now = 14.111;
     await userEvent.click(screen.getByRole('button', { name: 'Set & next' }));
-    expect(latest[0]!.time).toBe(11.11);
-    // The next line is selected, so pressing again times it.
+    expect(latest.map((l) => l.time)).toEqual([10, 14.11, 20]);
+    // The next line is selected, so pressing again as it finishes times the one after.
     expect(screen.getByRole('button', { name: 'Select the line “Line 2”' })).toHaveAttribute('aria-pressed', 'true');
-    ctrl.now = 15.5;
+    ctrl.now = 19.5;
     fireEvent.keyDown(document.body, { key: 'c' });
-    expect(latest[1]!.time).toBe(15.5);
+    expect(latest.map((l) => l.time)).toEqual([10, 14.11, 19.5]);
     expect(screen.getByRole('button', { name: 'Select the line “Line 3”' })).toHaveAttribute('aria-pressed', 'true');
     await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(latest[2]!.time).toBeNull();
     expect(screen.getByText('needs timing')).toBeInTheDocument();
+  });
+
+  it('times from the keyboard: start, pause, next, previous', async () => {
+    const ctrl = new FakeAudio();
+    render(<Harness initial={mk(10, 15, 20)} ctrl={ctrl} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Select the line “Line 1”' }));
+    ctrl.now = 9.8;
+    fireEvent.keyDown(document.body, { key: 's' });
+    ctrl.now = 12.5;
+    fireEvent.keyDown(document.body, { key: 'p' });
+    expect(latest[0]).toMatchObject({ time: 9.8, end: 12.5 });
+    expect(screen.getByText('pause at 00:12.50')).toBeInTheDocument();
+    // P moved on to line 2; N goes on to line 3 without touching anything, the music with it.
+    fireEvent.keyDown(document.body, { key: 'n' });
+    expect(screen.getByRole('button', { name: 'Select the line “Line 3”' })).toHaveAttribute('aria-pressed', 'true');
+    expect(ctrl.now).toBeCloseTo(19.5);
+    expect(latest.map((l) => l.time)).toEqual([9.8, 15, 20]);
+    fireEvent.keyDown(document.body, { key: 'Backspace' });
+    expect(screen.getByRole('button', { name: 'Select the line “Line 2”' })).toHaveAttribute('aria-pressed', 'true');
+    expect(ctrl.now).toBeCloseTo(14.5);
+    // Shortcuts still work right after ticking a line (the checkbox has the focus).
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Tick the line “Line 3”' }));
+    fireEvent.keyDown(screen.getByRole('checkbox', { name: 'Tick the line “Line 3”' }), { key: 'ArrowRight' });
+    expect(latest[1]!.time).toBe(15.1);
+  });
+
+  it('plays and pauses with Space, even when a line has the focus', async () => {
+    const ctrl = new FakeAudio();
+    render(<Harness initial={mk(10, 15)} ctrl={ctrl} />);
+    space();
+    expect(ctrl.playing).toBe(true);
+    const line = screen.getByRole('button', { name: 'Select the line “Line 1”' });
+    await userEvent.click(line);
+    fireEvent.keyDown(line, { code: 'Space', key: ' ' });
+    expect(ctrl.playing).toBe(false);
+    // The line stays selected: Space did not click it.
+    expect(line).toHaveAttribute('aria-pressed', 'true');
+    // Enter on that line plays it, a little before it starts.
+    fireEvent.keyDown(line, { key: 'Enter' });
+    expect(ctrl.playing).toBe(true);
+    expect(ctrl.now).toBeCloseTo(9.5);
+    expect(line).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('flags a line timed before the previous one', () => {
