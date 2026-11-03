@@ -4,7 +4,8 @@ import { looksLikeLrc } from '../lib/lrc';
 import { parseLyrics } from '../lib/lyrics';
 import type { AudioAsset } from '../state/project';
 import { resolveLanguage, type SyncSettings } from '../state/settings';
-import { MODEL_DOWNLOAD_MB, type Device, type LanguageChoice, type ModelSize } from '../worker/models';
+import { SYNC_DOWNLOAD_MB, type SyncMode } from '../state/syncEngine';
+import type { Device, LanguageChoice } from '../worker/models';
 import { AudioDropzone } from './AudioDropzone';
 
 interface Props {
@@ -25,7 +26,7 @@ export function ImportScreen(props: Props) {
   const { lyricsText, audio, settings, device } = props;
   const lyricsId = useId();
   const languageId = useId();
-  const modelId = useId();
+  const modeId = useId();
 
   const isLrc = useMemo(() => looksLikeLrc(lyricsText), [lyricsText]);
   const lineCount = useMemo(() => (isLrc ? 0 : parseLyrics(lyricsText).length), [lyricsText, isLrc]);
@@ -89,23 +90,26 @@ export function ImportScreen(props: Props) {
             </select>
           </div>
           <div className="field">
-            <label className="field-label" htmlFor={modelId}>
-              {t.import.modelLabel}
+            <label className="field-label" htmlFor={modeId}>
+              {t.import.modeLabel}
             </label>
             <select
-              id={modelId}
+              id={modeId}
               className="select"
-              value={settings.model}
-              onChange={(e) => props.onSettingsChange({ model: e.target.value as ModelSize })}
+              value={settings.mode}
+              onChange={(e) => props.onSettingsChange({ mode: e.target.value as SyncMode })}
             >
-              {(['tiny', 'base', 'small'] as const).map((m) => (
+              {(['max', 'fast'] as const).map((m) => (
                 <option key={m} value={m}>
-                  {t.import.models[m](MODEL_DOWNLOAD_MB[m][device])}
+                  {t.import.modes[m](SYNC_DOWNLOAD_MB[m][device])}
                 </option>
               ))}
             </select>
           </div>
         </div>
+        <p className="hint">
+          {t.import.modeHints[settings.mode]} {t.import.modeTime[settings.mode][device]}
+        </p>
         <p className="hint">
           {device === 'webgpu' ? t.import.deviceWebgpu : t.import.deviceWasm} {t.import.modelHint}
         </p>
@@ -113,7 +117,6 @@ export function ImportScreen(props: Props) {
         {resolved.from === 'fallback' && hasLyrics && (
           <p className="hint hint--warn">{t.import.languageFallback(languageName)}</p>
         )}
-        {resolved.language === 'mg' && <p className="hint">{t.import.malagasyHint}</p>}
       </details>
 
       <div className="stack stack--tight">

@@ -4,6 +4,36 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Sync is now **forced alignment** instead of transcription + text matching: the
+  lyrics are placed on the audio letter by letter with Meta's MMS model (CTC Viterbi),
+  so every line gets a timestamp. On JamendoLyrics (12 songs, 550 lines) 90.0 % of
+  line starts land within 0.5 s in maximum-accuracy mode, 85.5 % in fast mode.
+- Two modes replace the Whisper model choice: "Maximum accuracy" (vocal isolation +
+  MMS + Whisper anchors, ~20 s per song on WebGPU) and "Fast" (~6 s).
+- The confidence badge now shows a calibrated reliability, and uncertain lines are
+  marked "to check" instead of being left untimed.
+
+### Added
+
+- Vocal isolation with Spleeter 2-stems (ONNX, STFT/iSTFT in TypeScript) and a vocal
+  gate so no line can start in an intro, solo or break.
+- Lyrics clean-up for Genius copies: page leftovers, repeat markers ("(x2)", "×3",
+  "(bis)", "[Chorus x2]"), header-only sections refilled, headers without brackets,
+  Cyrillic look-alike letters, numbers spelled out in French, English and Malagasy,
+  Arabizi digits.
+- Alignment benchmark (`scripts/bench-alignment.mjs`) on JamendoLyrics or on your own
+  tracks with LRCLIB references (`scripts/fetch-lrclib.mjs`).
+
+### Fixed
+
+- "Auto" language translated French songs to English (0 % confidence): the language is
+  now read from the lyrics and always passed explicitly.
+- Whisper decoding loops on music no longer take minutes or hide the rest of a window.
+
 ## [0.1.0] — 2026-11-03
 
 First MVP release.

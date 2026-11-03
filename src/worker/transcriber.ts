@@ -45,6 +45,18 @@ export class Transcriber {
     );
   }
 
+  /** Like transcribe, for audio at any sample rate. Transfers `pcm`. */
+  transcribeAt(
+    pcm: Float32Array,
+    sampleRate: number,
+    language: WhisperLanguage,
+    onProgress: (p: ChunkProgress) => void,
+  ): Promise<TranscribedWord[]> {
+    return this.track(
+      this.api.transcribeAt(Comlink.transfer(pcm, [pcm.buffer]), sampleRate, language, Comlink.proxy(onProgress)),
+    );
+  }
+
   /** Stops whatever is running. Pending calls reject with an AbortError. */
   cancel(): void {
     for (const reject of this.pending) reject(new DOMException('Cancelled', 'AbortError'));

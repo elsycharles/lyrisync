@@ -11,7 +11,7 @@ function setup(overrides: Partial<Parameters<typeof ImportScreen>[0]> = {}) {
     onLyricsChange: vi.fn(),
     audio: null,
     onAudioFile: vi.fn(),
-    settings: { language: 'auto' as const, model: 'base' as const },
+    settings: { language: 'auto' as const, mode: 'max' as const },
     onSettingsChange: vi.fn(),
     device: 'wasm' as const,
     onSync: vi.fn(),
@@ -60,10 +60,10 @@ describe('ImportScreen', () => {
     expect(props.onAudioFile).toHaveBeenCalledOnce();
   });
 
-  it('shows model sizes for the detected device and a Malagasy hint', () => {
-    setup({ device: 'webgpu', settings: { language: 'mg', model: 'base' } });
-    expect(screen.getByRole('option', { name: /Balanced — ~206 MB/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /Accurate — ~586 MB, best for rap/ })).toBeInTheDocument();
-    expect(screen.getByText(/covers Malagasy poorly/)).toBeInTheDocument();
+  it('shows the download size of each mode for the detected device', () => {
+    setup({ device: 'webgpu', settings: { language: 'mg', mode: 'max' } });
+    expect(screen.getByRole('option', { name: /Maximum accuracy — ~1257 MB/ })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Fast — ~671 MB/ })).toBeInTheDocument();
+    expect(screen.getByText(/cross-checks with a transcription/)).toBeInTheDocument();
   });
 });

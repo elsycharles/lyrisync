@@ -1,6 +1,6 @@
 # LyriSync — notes for Claude
 
-Lyrics + audio → `.lrc`, fully in the browser (React 18 + Vite + TS, Whisper via transformers.js in a Web Worker). No backend, ever: the "free and unlimited" promise depends on it.
+Lyrics + audio → `.lrc`, fully in the browser (React 18 + Vite + TS). Sync = vocal isolation (Spleeter) + CTC forced alignment (MMS) + optional Whisper anchors, all in Web Workers. No backend, ever: the "free and unlimited" promise depends on it.
 
 ## Git: Gitflow, strictly
 
@@ -15,24 +15,29 @@ Lyrics + audio → `.lrc`, fully in the browser (React 18 + Vite + TS, Whisper v
 npm run typecheck && npm run lint && npm test && npm run build && npm run test:e2e
 ```
 
+Alignment changes also need the benchmark (see README "Benchmark"): `node scripts/bench-alignment.mjs --data <jamendolyrics> --gpu --pipeline max`. Baseline: 90.0 % of lines ≤ 0.5 s (max), 85.5 % (fast). Never change `FORCED_DEFAULTS` (src/lib/align/forced.ts) without it.
+
 ## Architecture rules
 
 - `src/lib/` is pure and unit-tested; keep React and DOM out of it.
+- `src/state/syncEngine.ts` is the one sync pipeline; the React hook and the benchmark both call it.
+- Every line gets a time from forced alignment. Lines with nothing alignable are interpolated and marked `estimated`; uncertain ones (reliability < `RELIABLE`) are shown "to check". The reliability mapping in `lineReliability` is calibrated on the benchmark.
+- MMS input is normalised over the whole track, never per window (silence would be blown up into "letters").
+- Whisper: always pass an explicit language (`resolveLanguage`; with none, transformers.js translates to English). It listens to the mix, not the isolated vocals (separation artefacts hurt it). Its timestamps run ~0.14 s late (`WHISPER_LATENCY`).
+- On WebGPU, MMS stays fp16 (q4 costs ~5 points). On WASM keep fp32 encoders for Whisper tiny/base (`dtypesFor`): q8 encoders loop on music.
+- ONNX Runtime WebGPU creates sessions one at a time; `onnxruntime-web` is pinned to the version transformers.js uses so there is one runtime.
 - Playhead: `AudioController` samples `currentTime` with rAF; read it via `usePlaybackSelector` (returns a primitive) or `useClockRef` (DOM write). Never put the playhead in React state.
-- The worker is cancelled by terminating it (`transcriber.cancel()`); pending calls reject with `AbortError`.
-- Always pass an explicit language to Whisper (`resolveLanguage`): with none, transformers.js decodes in English and translates. "Auto" means "read it from the lyrics".
-- On WASM keep a fp32 encoder for tiny/base (`dtypesFor`): q8 encoders loop on music.
-- In dev, `window.__lyrisync` holds the last run's heard words and alignment, and the worker logs each window to the console.
-- The aligner must leave a line untimed rather than guess. Export fills gaps with `fillMissingTimes`; the UI keeps flagging them.
+- Workers are cancelled by terminating them (`cancelSync()`); pending calls reject with `AbortError`.
 - COOP/COEP are required (multithreaded WASM). Any new cross-origin asset must be CORS-enabled; fonts are self-hosted for this reason.
-- Do not let Whisper weights or ORT `.wasm` into the Workbox precache (see `vite.config.ts`).
+- Do not let model weights or ORT `.wasm` into the Workbox precache (see `vite.config.ts`).
+- Never download copyrighted audio (streaming services, YouTube) for tests: use JamendoLyrics (CC) or the user's own files with LRCLIB references.
 
 ## Design rules (from the visual identity)
 
 - Violet `#6C4CF1` = actions only (buttons, links), never a state. On dark backgrounds use `#9B82FF` for text/icons; white-on-`#6C4CF1` fills are fine in both themes.
 - Mint = the reading position only.
 - Mint, amber, red are background colours with charcoal (or white on red) text. As text, use `--green-text` / `--amber-text`.
-- The confidence badge is neutral ≥ 75 %, amber below, red below 50 %.
+- The reliability badge is neutral ≥ 85 %, amber below, red below 70 %.
 - Tokens live in `src/styles/tokens.css`; every text/background pair must clear WCAG AA (4.5:1).
 
 ## i18n

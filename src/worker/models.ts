@@ -4,7 +4,10 @@ export type LanguageChoice = 'auto' | 'fr' | 'en' | 'mg';
 /** The language actually passed to Whisper: never left to auto-detection (see detectLyricsLanguage). */
 export type WhisperLanguage = Exclude<LanguageChoice, 'auto'>;
 
-/** Whisper checkpoints exported with cross-attentions, needed for word timestamps. */
+/**
+ * Whisper checkpoints exported with cross-attentions, needed for word timestamps.
+ * In the sync pipeline Whisper only cross-checks the forced alignment ("max" mode).
+ */
 export const MODEL_IDS: Record<ModelSize, string> = {
   tiny: 'onnx-community/whisper-tiny_timestamped',
   base: 'onnx-community/whisper-base_timestamped',
@@ -22,13 +25,6 @@ export function dtypesFor(size: ModelSize, device: Device): Dtypes {
   if (device === 'webgpu') return { encoder_model: 'fp32', decoder_model_merged: 'q4' };
   return { encoder_model: size === 'small' ? 'q8' : 'fp32', decoder_model_merged: 'q8' };
 }
-
-/** Approximate download, in MB, for the weights picked by `dtypesFor`. */
-export const MODEL_DOWNLOAD_MB: Record<ModelSize, Record<Device, number>> = {
-  tiny: { wasm: 64, webgpu: 120 },
-  base: { wasm: 136, webgpu: 206 },
-  small: { wasm: 249, webgpu: 586 },
-};
 
 /** Whisper language names, as transformers.js expects them. */
 export const WHISPER_LANGUAGE: Record<WhisperLanguage, string> = {

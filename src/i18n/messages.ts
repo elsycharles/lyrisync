@@ -35,17 +35,22 @@ export const fr = {
     languageDetected: (name: string) => `Langue reconnue dans les paroles : ${name}.`,
     languageFallback: (name: string) =>
       `Langue non reconnue dans les paroles : ${name} sera utilisé. Choisissez la bonne langue si besoin.`,
-    modelLabel: 'Modèle',
-    models: {
-      tiny: (mb: number) => `Rapide — ~${mb} Mo`,
-      base: (mb: number) => `Équilibré — ~${mb} Mo`,
-      small: (mb: number) => `Précis — ~${mb} Mo, conseillé pour le rap et les mix chargés`,
+    modeLabel: 'Mode',
+    modes: {
+      max: (mb: number) => `Précision maximale — ~${mb} Mo (recommandé)`,
+      fast: (mb: number) => `Rapide — ~${mb} Mo`,
+    },
+    modeHints: {
+      max: 'Isole la voix, place chaque lettre sur l’audio et vérifie avec une transcription. Le plus fiable, même sur le rap et les mix chargés.',
+      fast: 'Isole la voix et place chaque lettre sur l’audio, sans la vérification par transcription : environ trois fois plus rapide.',
+    },
+    modeTime: {
+      max: { webgpu: 'Environ 20 s pour un morceau de 3 à 4 min.', wasm: 'Environ 2 à 3 min pour un morceau de 3 à 4 min.' },
+      fast: { webgpu: 'Environ 6 s pour un morceau de 3 à 4 min.', wasm: 'Environ 1 min pour un morceau de 3 à 4 min.' },
     },
     deviceWebgpu: 'Accélération WebGPU disponible.',
     deviceWasm: 'Calcul sur le processeur (WebGPU indisponible) : comptez plus de temps.',
-    modelHint: 'Le modèle est téléchargé une seule fois, puis gardé en cache par le navigateur.',
-    malagasyHint:
-      'Le malgache est encore mal couvert par Whisper : si le résultat est faible, calez les lignes vous-même.',
+    modelHint: 'Les modèles sont téléchargés une seule fois, puis gardés en cache par le navigateur.',
     sync: 'Synchroniser les paroles',
     manual: 'Caler moi-même',
     missingLyrics: 'Ajoutez des paroles pour commencer.',
@@ -56,12 +61,14 @@ export const fr = {
   processing: {
     title: 'Synchronisation en cours',
     stepDecode: 'Lecture de l’audio',
-    stepModel: 'Préparation du modèle',
-    stepTranscribe: 'Écoute du morceau',
+    stepModel: 'Préparation des modèles',
+    stepSeparate: 'Isolation de la voix',
+    stepListen: 'Écoute de chaque lettre',
+    stepRead: 'Vérification par transcription',
     stepAlign: 'Placement des lignes',
     downloaded: (loaded: string, total: string) => `${loaded} sur ${total}`,
     fromCache: 'Depuis le cache',
-    chunk: (done: number, total: number) => `Passage ${done} sur ${total}`,
+    chunk: (done: number, total: number) => `${done} sur ${total}`,
     device: { webgpu: 'WebGPU', wasm: 'Processeur (WASM)' },
     deviceLabel: 'Calcul :',
     keepOpen: 'Gardez cet onglet ouvert. Vous pouvez continuer à l’utiliser pendant le calcul.',
@@ -89,16 +96,21 @@ export const fr = {
   result: {
     title: 'Résultat',
     linesLabel: 'Lignes synchronisées',
-    confidence: (pct: number) => `Confiance ${pct} %`,
-    confidenceHint: 'Part des mots des paroles retrouvés dans l’audio',
+    confidence: (pct: number) => `Fiabilité ${pct} %`,
+    confidenceHint: 'Part des lignes dont le timing est sûr',
     needsTiming: 'à caler',
+    toCheck: 'à vérifier',
+    estimated: 'estimée',
     untimedNotice: (n: number) =>
       n === 1
         ? '1 ligne sans timing : elle sera estimée à l’export.'
         : `${n} lignes sans timing : elles seront estimées à l’export.`,
+    toCheckNotice: (n: number) =>
+      n === 1
+        ? '1 ligne est moins sûre que les autres. Écoutez-la : un clic dessus vous y emmène.'
+        : `${n} lignes sont moins sûres que les autres. Écoutez-les : un clic dessus vous y emmène.`,
     fixNow: 'Les caler maintenant',
-    lowConfidence:
-      'Une partie des paroles n’a pas été reconnue : passage dans une autre langue, voix couverte par la musique ou mots coupés différemment. Le mode Taper vous emmène directement d’une ligne à caler à la suivante.',
+    adjust: 'Ajuster',
     metadata: 'Infos du morceau (optionnel)',
     trackTitle: 'Titre',
     artist: 'Artiste',
@@ -196,16 +208,22 @@ export const en: Messages = {
     languageDetected: (name: string) => `Language found in the lyrics: ${name}.`,
     languageFallback: (name: string) =>
       `Could not tell the language from the lyrics: ${name} will be used. Pick the right one if needed.`,
-    modelLabel: 'Model',
-    models: {
-      tiny: (mb: number) => `Fast — ~${mb} MB`,
-      base: (mb: number) => `Balanced — ~${mb} MB`,
-      small: (mb: number) => `Accurate — ~${mb} MB, best for rap and busy mixes`,
+    modeLabel: 'Mode',
+    modes: {
+      max: (mb: number) => `Maximum accuracy — ~${mb} MB (recommended)`,
+      fast: (mb: number) => `Fast — ~${mb} MB`,
+    },
+    modeHints: {
+      max: 'Isolates the vocals, places every letter on the audio and cross-checks with a transcription. The most reliable, rap and busy mixes included.',
+      fast: 'Isolates the vocals and places every letter on the audio, without the transcription check: about three times faster.',
+    },
+    modeTime: {
+      max: { webgpu: 'About 20 s for a 3–4 min track.', wasm: 'About 2–3 min for a 3–4 min track.' },
+      fast: { webgpu: 'About 6 s for a 3–4 min track.', wasm: 'About 1 min for a 3–4 min track.' },
     },
     deviceWebgpu: 'WebGPU acceleration available.',
     deviceWasm: 'Running on the CPU (WebGPU unavailable): expect it to take longer.',
-    modelHint: 'The model is downloaded once, then kept in the browser cache.',
-    malagasyHint: 'Whisper still covers Malagasy poorly: if the result is weak, tap the lines yourself.',
+    modelHint: 'The models are downloaded once, then kept in the browser cache.',
     sync: 'Sync lyrics',
     manual: 'Time it myself',
     missingLyrics: 'Add lyrics to get started.',
@@ -216,12 +234,14 @@ export const en: Messages = {
   processing: {
     title: 'Syncing',
     stepDecode: 'Reading the audio',
-    stepModel: 'Preparing the model',
-    stepTranscribe: 'Listening to the track',
+    stepModel: 'Preparing the models',
+    stepSeparate: 'Isolating the vocals',
+    stepListen: 'Listening for every letter',
+    stepRead: 'Cross-checking with a transcription',
     stepAlign: 'Placing the lines',
     downloaded: (loaded: string, total: string) => `${loaded} of ${total}`,
     fromCache: 'From cache',
-    chunk: (done: number, total: number) => `Pass ${done} of ${total}`,
+    chunk: (done: number, total: number) => `${done} of ${total}`,
     device: { webgpu: 'WebGPU', wasm: 'CPU (WASM)' },
     deviceLabel: 'Running on:',
     keepOpen: 'Keep this tab open. You can keep using it while it works.',
@@ -249,16 +269,21 @@ export const en: Messages = {
   result: {
     title: 'Result',
     linesLabel: 'Synced lines',
-    confidence: (pct: number) => `Confidence ${pct}%`,
-    confidenceHint: 'Share of the lyric words found in the audio',
+    confidence: (pct: number) => `Reliability ${pct}%`,
+    confidenceHint: 'Share of lines whose timing is certain',
     needsTiming: 'needs timing',
+    toCheck: 'to check',
+    estimated: 'estimated',
     untimedNotice: (n: number) =>
       n === 1
         ? '1 line has no timing: it will be estimated on export.'
         : `${n} lines have no timing: they will be estimated on export.`,
+    toCheckNotice: (n: number) =>
+      n === 1
+        ? '1 line is less certain than the others. Give it a listen: clicking it takes you there.'
+        : `${n} lines are less certain than the others. Give them a listen: clicking one takes you there.`,
     fixNow: 'Time them now',
-    lowConfidence:
-      'Part of the lyrics was not recognised: a passage in another language, vocals buried in the mix, or words split differently. Tap mode takes you straight from one line to time to the next.',
+    adjust: 'Adjust',
     metadata: 'Track info (optional)',
     trackTitle: 'Title',
     artist: 'Artist',
