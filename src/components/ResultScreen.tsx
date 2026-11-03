@@ -2,6 +2,7 @@ import { useCallback, useId } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { useSpaceToggle } from '../hooks/useSpaceToggle';
 import { useI18n } from '../i18n/useI18n';
+import { confidenceLevel } from '../lib/confidence';
 import { countUntimed } from '../lib/timing';
 import type { LrcMetadata, LyricLine } from '../lib/types';
 import { ConfidenceChip } from './ConfidenceChip';
@@ -45,7 +46,12 @@ export function ResultScreen(props: Props) {
 
       {untimed > 0 && (
         <div className="notice notice--row" role="status">
-          <span>{t.result.untimedNotice(untimed)}</span>
+          <span>
+            {t.result.untimedNotice(untimed)}
+            {confidence !== null && confidenceLevel(confidence) !== 'ok' && (
+              <span className="notice__detail">{t.result.lowConfidence}</span>
+            )}
+          </span>
           <button type="button" className="btn-link" onClick={props.onFixTiming}>
             {t.result.fixNow}
           </button>

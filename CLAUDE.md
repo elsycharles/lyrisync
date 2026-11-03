@@ -20,6 +20,9 @@ npm run typecheck && npm run lint && npm test && npm run build && npm run test:e
 - `src/lib/` is pure and unit-tested; keep React and DOM out of it.
 - Playhead: `AudioController` samples `currentTime` with rAF; read it via `usePlaybackSelector` (returns a primitive) or `useClockRef` (DOM write). Never put the playhead in React state.
 - The worker is cancelled by terminating it (`transcriber.cancel()`); pending calls reject with `AbortError`.
+- Always pass an explicit language to Whisper (`resolveLanguage`): with none, transformers.js decodes in English and translates. "Auto" means "read it from the lyrics".
+- On WASM keep a fp32 encoder for tiny/base (`dtypesFor`): q8 encoders loop on music.
+- In dev, `window.__lyrisync` holds the last run's heard words and alignment, and the worker logs each window to the console.
 - The aligner must leave a line untimed rather than guess. Export fills gaps with `fillMissingTimes`; the UI keeps flagging them.
 - COOP/COEP are required (multithreaded WASM). Any new cross-origin asset must be CORS-enabled; fonts are self-hosted for this reason.
 - Do not let Whisper weights or ORT `.wasm` into the Workbox precache (see `vite.config.ts`).
