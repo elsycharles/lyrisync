@@ -1038,3 +1038,33 @@ button.line--active:not(:disabled):hover {
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
+
+/* --- service worker toast --- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 30px rgba(31, 36, 48, 0.18);
+  font-size: 13.5px;
+  z-index: 10;
+}
+
+.toast > span {
+  flex: 1;
+  min-width: 200px;
+}
+
+.toast__actions {
+  display: flex;
+  gap: 8px;
+}
