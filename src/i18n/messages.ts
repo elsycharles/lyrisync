@@ -8,8 +8,7 @@ export const fr = {
     footer: 'Tout se passe dans votre navigateur : aucun fichier n’est envoyé à un serveur.',
     version: (v: string) => `Version ${v}`,
     languageGroup: 'Langue de l’interface',
-    theme: { system: 'Thème automatique', light: 'Thème clair', dark: 'Thème sombre' },
-    themeLabel: 'Changer de thème',
+    switchTheme: { light: 'Passer au thème clair', dark: 'Passer au thème sombre' },
     stepper: {
       label: 'Étapes',
       import: 'Paroles et audio',
@@ -221,8 +220,7 @@ export const en: Messages = {
     footer: 'Everything runs in your browser: no file is ever sent to a server.',
     version: (v: string) => `Version ${v}`,
     languageGroup: 'Interface language',
-    theme: { system: 'Automatic theme', light: 'Light theme', dark: 'Dark theme' },
-    themeLabel: 'Change theme',
+    switchTheme: { light: 'Switch to light theme', dark: 'Switch to dark theme' },
     stepper: {
       label: 'Steps',
       import: 'Lyrics and audio',
