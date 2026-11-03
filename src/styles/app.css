@@ -2338,3 +2338,18 @@ button.line--selected:not(:disabled):hover {
   color: var(--ink);
   line-height: 1;
 }
+
+/* "Set & next": the line tool you press over and over while the music plays. */
+.tool-btn--main {
+  background: var(--ls-accent-fill);
+  color: #fff;
+}
+
+.tool-btn--main svg {
+  color: #fff;
+}
+
+.tool-btn--main:not(:disabled):hover {
+  background: #5b3be0;
+  border-color: transparent;
+}

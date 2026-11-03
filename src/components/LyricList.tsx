@@ -53,9 +53,15 @@ export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
 
   const nudge = useCallback((id: string, delta: number) => onEdit?.(nudgeLine(lines, id, delta)), [lines, onEdit]);
 
-  const setHere = useCallback(
-    (id: string) =>
-      onEdit?.(lines.map((l) => (l.id === id ? { ...l, time: roundCs(ctrl.currentTime()), source: 'manual' as const } : l))),
+  // Set the line to the playhead and move on: pressing at each line start while the
+  // music plays times the lines one after the other.
+  const setAndNext = useCallback(
+    (id: string) => {
+      const index = lines.findIndex((l) => l.id === id);
+      onEdit?.(lines.map((l) => (l.id === id ? { ...l, time: roundCs(ctrl.currentTime()), source: 'manual' as const } : l)));
+      const next = lines[index + 1];
+      setSelectedId(next ? next.id : null);
+    },
     [ctrl, lines, onEdit],
   );
 
@@ -109,7 +115,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
         case 'C':
           if (!selected) return;
           e.preventDefault();
-          setHere(selected.id);
+          setAndNext(selected.id);
           return;
         case 'Escape':
           setSelectedId(null);
@@ -118,7 +124,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [active, editable, lines, nudge, onUndo, playFrom, selected, selectedId, setHere]);
+  }, [active, editable, lines, nudge, onUndo, playFrom, selected, selectedId, setAndNext]);
 
   return (
     <ol className="lines lines--scroll" ref={listRef} aria-label={t.result.linesLabel}>
@@ -170,7 +176,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
               <LineTools
                 line={line}
                 onNudge={(d) => nudge(line.id, d)}
-                onSetHere={() => setHere(line.id)}
+                onSetNext={() => setAndNext(line.id)}
                 onPlay={() => playFrom(line)}
               />
             )}
