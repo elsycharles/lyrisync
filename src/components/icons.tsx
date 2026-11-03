@@ -120,3 +120,47 @@ export function ChipIcon({ size = 16, className }: IconProps) {
     </svg>
   );
 }
+
+export function TargetIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <circle cx="8" cy="8" r="5.5" />
+      <circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none" />
+      <path d="M8 1v2.2M8 12.8V15M1 8h2.2M12.8 8H15" />
+    </svg>
+  );
+}
+
+export function PlayIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M5 3.2v9.6L12.6 8Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function CloseIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
+  );
+}
+
+export function UndoIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M5.5 4 2.5 7l3 3" />
+      <path d="M2.8 7h6.7a4 4 0 0 1 0 8H7" />
+    </svg>
+  );
+}
+
+export function FileIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M9.5 1.8H4.6c-.8 0-1.4.6-1.4 1.4v9.6c0 .8.6 1.4 1.4 1.4h6.8c.8 0 1.4-.6 1.4-1.4V5.1Z" />
+      <path d="M9.4 1.9v3.3h3.3" />
+    </svg>
+  );
+}

@@ -24,6 +24,13 @@ All notable changes to this project are documented here. The format follows
   - the result screen keeps the player, a large "now playing" line and the actions in
     view beside the line list;
   - the editor's player stays visible while the list scrolls;
+  - the result screen plays the lyrics on a dark stage (previous, current and next
+    line, with a thin bar filling up until the next line) instead of a tinted box;
+  - lines can be fixed right on the result screen: click a line for its tools
+    (±0.1 s / ±1 s, set to the playhead, listen), double-click to hear it, keyboard
+    shortcuts shown as key caps, and undo; double-click also plays a line in Adjust;
+  - Adjust: grouped nudge control around the line's time, the playing line marked by
+    a mint time pill, a batch bar that follows the list, "Done" as the main action;
   - checked for overflow from 320 px to 1440 px wide; keyboard tips are hidden on
     touch screens.
 

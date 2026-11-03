@@ -141,6 +141,9 @@ export function App() {
             confidence={project.history.length === 0 ? project.confidence : null}
             metadata={project.metadata}
             ctrl={ctrl}
+            canUndo={project.history.length > 0}
+            onEdit={(lines) => dispatch({ type: 'lines/edit', lines })}
+            onUndo={() => dispatch({ type: 'lines/undo' })}
             onMetadataChange={(metadata) => dispatch({ type: 'metadata/set', metadata })}
             onFixTiming={() => setScreen('editor')}
             onExport={exportLrc}

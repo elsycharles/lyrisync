@@ -1522,18 +1522,7 @@ button.line--active:not(:disabled):hover {
   flex: 1;
 }
 
-.toolbar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 
-.toolbar .btn {
-  flex: 1;
-  min-width: 110px;
-  padding: 9px 8px;
-  font-size: 12.5px;
-}
 
 .line--static {
   cursor: default;
@@ -1578,9 +1567,6 @@ button.line--active:not(:disabled):hover {
   color: var(--ink);
 }
 
-.line--playing {
-  box-shadow: inset 3px 0 0 var(--mint);
-}
 
 .line .flag--warn {
   color: var(--amber-text);
@@ -1609,36 +1595,9 @@ button.line--active:not(:disabled):hover {
   border-color: var(--accent);
 }
 
-.nudge {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 2px 4px;
-}
 
-.nudge button {
-  flex: 1;
-  min-width: 64px;
-  font-family: var(--font-body);
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 7px 4px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
-  font-variant-numeric: tabular-nums;
-}
 
-.nudge button:not(:disabled):hover {
-  border-color: var(--accent);
-}
 
-.nudge button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
 .batchbar {
   display: flex;
@@ -1671,7 +1630,7 @@ button.line--active:not(:disabled):hover {
   margin-right: 4px;
 }
 
-.batchbar button {
+.batchbar__actions button {
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
@@ -1684,7 +1643,7 @@ button.line--active:not(:disabled):hover {
   font-variant-numeric: tabular-nums;
 }
 
-.batchbar button:disabled {
+.batchbar__actions button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -1761,16 +1720,13 @@ button.line--active:not(:disabled):hover {
   gap: 16px;
 }
 
-.result__player,
+
+
 .result__summary {
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: 18px;
-}
-
-.result__player {
-  box-shadow: var(--shadow-raised);
 }
 
 .result__lines {
@@ -1785,17 +1741,7 @@ button.line--active:not(:disabled):hover {
   max-height: calc(100vh - 190px);
 }
 
-.result__player .player {
-  border: none;
-  padding: 0;
-  background: transparent;
-  gap: 12px;
-}
 
-.result__player .play {
-  width: 44px;
-  height: 44px;
-}
 
 .track-text {
   display: flex;
@@ -1813,65 +1759,11 @@ button.line--active:not(:disabled):hover {
 }
 
 /* Now playing: the reading position, so mint. */
-.now {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  padding: 14px 14px 14px 18px;
-  border-radius: var(--radius);
-  background: var(--mint-tint);
-  min-height: 112px;
-}
 
-.now::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 12px;
-  bottom: 12px;
-  width: 4px;
-  border-radius: 0 4px 4px 0;
-  background: var(--mint);
-}
 
-.now__label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
 
-.now__line {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 20px;
-  line-height: 1.3;
-  color: var(--ink);
-  text-wrap: balance;
-  animation: line-in 0.25s ease-out;
-}
 
-.now__line--idle {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 14px;
-  color: var(--muted);
-}
 
-.now__next {
-  margin: 2px 0 0;
-  font-size: 13.5px;
-  color: var(--muted);
-  line-height: 1.4;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
 
 @keyframes line-in {
   from {
@@ -1962,9 +1854,12 @@ button.line--active:not(:disabled):hover {
   }
 
   .panel,
-  .result__player,
   .result__summary,
   .result__lines {
+    padding: 16px;
+  }
+
+  .stage-card {
     padding: 16px;
   }
 
@@ -1980,8 +1875,8 @@ button.line--active:not(:disabled):hover {
     justify-content: flex-start;
   }
 
-  .now__line {
-    font-size: 18px;
+  .lyrics-stage__current {
+    font-size: 20px;
   }
 
   .footer {
@@ -2008,14 +1903,438 @@ button.line--active:not(:disabled):hover {
   }
 }
 
-.result__player .track-title {
-  font-family: var(--font-display);
-  font-size: 15.5px;
-}
 
 /* Keyboard tips mean nothing on a touch screen. */
 @media (pointer: coarse) {
   .hint--keyboard {
     display: none;
   }
+}
+
+/* --- result: the lyrics stage ---
+ * A dark "screen" where the lyrics play. On the deep violet base, violet buttons do not
+ * hold (3.1:1): the play button is white, and the reading position is mint. */
+.stage-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-xl);
+  color: #fff;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(155, 130, 255, 0.22), transparent 60%),
+    linear-gradient(170deg, #2a2150 0%, var(--ls-base) 60%, #1b1533 100%);
+  border: 1px solid rgba(155, 130, 255, 0.18);
+  box-shadow: var(--shadow-raised);
+}
+
+.stage-card__head {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stage-card__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage-card__artist {
+  font-size: 12.5px;
+  color: #c6c0dc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lyrics-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 0 4px;
+}
+
+.lyrics-stage__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #c6c0dc;
+}
+
+.lyrics-stage__meta time {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  font-weight: 600;
+  font-size: 12px;
+  color: #2dd4a7;
+}
+
+.lyrics-stage__prev,
+.lyrics-stage__next {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #a79fc6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lyrics-stage__current {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.3;
+  color: #fff;
+  text-wrap: balance;
+  min-height: 2.6em;
+  display: flex;
+  align-items: flex-end;
+  animation: line-in 0.25s ease-out;
+}
+
+.lyrics-stage__current--idle {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 15px;
+  color: #c6c0dc;
+}
+
+/* How far into the current line we are: fills up until the next line starts. */
+.lyrics-stage__progress {
+  display: block;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin: 2px 0 4px;
+}
+
+.lyrics-stage__progress > span {
+  display: block;
+  height: 100%;
+  background: rgba(45, 212, 167, 0.8);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+@keyframes line-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stage-card .player {
+  background: transparent;
+  border: none;
+  padding: 0;
+  gap: 10px;
+  /* scrubber on top, controls under it */
+  flex-direction: column-reverse;
+}
+
+.stage-card .play {
+  width: 42px;
+  height: 42px;
+  background: #fff;
+  color: var(--ls-base);
+}
+
+.stage-card .play:focus-visible,
+.stage-card .scrubber:focus-visible {
+  outline-color: #9b82ff;
+}
+
+.stage-card .times {
+  color: #c6c0dc;
+}
+
+.stage-card .scrubber::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, #2dd4a7 var(--progress), rgba(255, 255, 255, 0.16) var(--progress));
+}
+
+.stage-card .scrubber::-moz-range-track {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.stage-card .scrubber::-moz-range-progress {
+  background: #2dd4a7;
+}
+
+.stage-card .scrubber::-webkit-slider-thumb {
+  background: #fff;
+  border-color: var(--ls-base);
+}
+
+.stage-card .scrubber::-moz-range-thumb {
+  background: #fff;
+  border-color: var(--ls-base);
+}
+
+.play {
+  color: #fff;
+}
+
+/* --- adjust: the line being played, and the selected line's tools --- */
+/* Every time cell keeps the same padding, so only the colour changes on the playing line. */
+.line--row time {
+  padding: 1px 6px;
+  margin-left: -6px;
+  border-radius: 6px;
+}
+
+.line--playing time {
+  background: var(--mint);
+  color: var(--ls-charcoal);
+  font-weight: 700;
+}
+
+.line-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 10px 2px 6px;
+}
+
+/* −1 s  −0,1 s  [time]  +0,1 s  +1 s, as one control */
+.line-tools__nudge {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.line-tools__nudge button {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  min-width: 52px;
+  padding: 8px 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.line-tools__nudge button + button,
+.line-tools__nudge button + .line-tools__time,
+.line-tools__time + button {
+  border-left: 1px solid var(--line);
+}
+
+.line-tools__nudge button:not(:disabled):hover {
+  background: var(--accent-tint);
+}
+
+.line-tools__nudge button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.line-tools__time {
+  display: grid;
+  place-items: center;
+  min-width: 86px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--bg);
+}
+
+.line-tools__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.tool-btn:not(:disabled):hover {
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+.tool-btn:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.tool-btn svg {
+  color: var(--accent);
+}
+
+.tool-btn:disabled svg {
+  color: var(--muted);
+}
+
+/* Batch shift: follows the list down, so it is always at hand. */
+.batchbar {
+  position: sticky;
+  bottom: 14px;
+  z-index: 4;
+  box-shadow: 0 8px 24px rgba(34, 27, 61, 0.16);
+}
+
+.batchbar .count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.batchbar__clear {
+  font-size: 12px;
+}
+
+/* Bottom actions of both editor modes: secondary on the left, the way out on the right. */
+.editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.editor-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.editor-actions__spacer {
+  flex: 1;
+}
+
+@media (max-width: 620px) {
+  .line-tools__nudge {
+    width: 100%;
+  }
+
+  .line-tools__nudge button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .line-tools__time {
+    min-width: 76px;
+  }
+
+  .editor-actions .btn--primary {
+    flex: 1 1 100%;
+    justify-content: center;
+    order: 3;
+  }
+}
+
+/* --- result: fixing lines in place --- */
+.summary__actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.summary__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.lines-hint {
+  margin-top: -4px;
+}
+
+.lines-hint--touch {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .lines-hint--pointer {
+    display: none;
+  }
+
+  .lines-hint--touch {
+    display: inline;
+  }
+}
+
+/* The result list's selected line: violet like a ticked line; mint still marks the one being sung. */
+button.line--selected:not(:disabled):hover {
+  border-color: var(--accent);
+}
+
+.lines .line-tools {
+  padding: 8px 2px 10px;
+}
+
+/* Keyboard shortcuts as key caps. */
+.shortcuts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.shortcuts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shortcuts span {
+  margin-left: 2px;
+}
+
+.shortcuts kbd {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  background: var(--surface);
+  color: var(--ink);
+  line-height: 1;
 }
