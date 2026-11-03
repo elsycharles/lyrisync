@@ -50,6 +50,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- The line being played is always shown in green, even when it is selected or ticked;
+  in Adjust the whole row turns green instead of only its time.
 - The sync progress bar no longer jumps backwards (stage weights, growing download
   totals and late worker events are folded so that progress only goes up).
 
