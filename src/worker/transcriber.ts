@@ -1,7 +1,7 @@
 import * as Comlink from 'comlink';
 import type { TranscribedWord } from '../lib/align/align';
 import type { ChunkProgress, DownloadProgress, TranscriberApi } from './transcriber.worker';
-import type { Device, LanguageChoice, ModelSize } from './models';
+import type { Device, ModelSize, WhisperLanguage } from './models';
 
 export type { ChunkProgress, DownloadProgress };
 
@@ -37,7 +37,7 @@ export class Transcriber {
   /** Transfers `pcm` to the worker: the caller's copy becomes unusable. */
   transcribe(
     pcm: Float32Array,
-    language: LanguageChoice,
+    language: WhisperLanguage,
     onProgress: (p: ChunkProgress) => void,
   ): Promise<TranscribedWord[]> {
     return this.track(

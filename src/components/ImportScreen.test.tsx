@@ -63,6 +63,7 @@ describe('ImportScreen', () => {
   it('shows model sizes for the detected device and a Malagasy hint', () => {
     setup({ device: 'webgpu', settings: { language: 'mg', model: 'base' } });
     expect(screen.getByRole('option', { name: /Balanced — ~206 MB/ })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Accurate — ~586 MB, best for rap/ })).toBeInTheDocument();
     expect(screen.getByText(/covers Malagasy poorly/)).toBeInTheDocument();
   });
 });

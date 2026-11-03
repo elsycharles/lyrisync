@@ -13,13 +13,13 @@ import { parseLrc, serializeLrc } from './lib/lrc';
 import { parseLyrics } from './lib/lyrics';
 import { fillMissingTimes } from './lib/timing';
 import { initialProject, projectReducer } from './state/project';
-import { useSettings } from './state/settings';
+import { resolveLanguage, useSettings } from './state/settings';
 import { useSyncPipeline } from './state/useSyncPipeline';
 
 export type Screen = 'import' | 'processing' | 'result' | 'editor';
 
 export function App() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [project, dispatch] = useReducer(projectReducer, initialProject);
   const [screen, setScreen] = useState<Screen>('import');
   const { settings, update: updateSettings } = useSettings();
@@ -65,14 +65,14 @@ export function App() {
     const result = await pipeline.run({
       audio: project.audio.file,
       lines,
-      language: settings.language,
+      language: resolveLanguage(settings.language, project.lyricsText, lang).language,
       model: settings.model,
     });
     if (result) {
       dispatch({ type: 'lines/replace', lines: result.lines, confidence: result.confidence });
       setScreen('result');
     }
-  }, [pipeline, project.audio, project.lyricsText, settings]);
+  }, [lang, pipeline, project.audio, project.lyricsText, settings]);
 
   const startManual = useCallback(() => {
     pipeline.reset();

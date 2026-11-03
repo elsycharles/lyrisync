@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { alignLyrics, type AlignResult } from '../lib/align/align';
 import { decodeAudioFile } from '../lib/audio';
 import type { LyricLine } from '../lib/types';
-import type { Device, LanguageChoice, ModelSize } from '../worker/models';
+import type { Device, ModelSize, WhisperLanguage } from '../worker/models';
 import { isAbortError, transcriber, type ChunkProgress, type DownloadProgress } from '../worker/transcriber';
 
 export type PipelinePhase = 'idle' | 'decoding' | 'loading' | 'transcribing' | 'aligning' | 'done' | 'error';
@@ -19,7 +19,7 @@ export interface PipelineState {
 export interface PipelineInput {
   audio: Blob;
   lines: LyricLine[];
-  language: LanguageChoice;
+  language: WhisperLanguage;
   model: ModelSize;
 }
 
@@ -60,6 +60,10 @@ export function useSyncPipeline() {
       stage = 'aligning';
       patch({ phase: 'aligning' });
       const result = alignLyrics(input.lines, words);
+      if (import.meta.env.DEV) {
+        // Inspect from the console: what Whisper heard, and how it was aligned.
+        (window as unknown as { __lyrisync: unknown }).__lyrisync = { words, result };
+      }
       patch({ phase: 'done' });
       return result;
     } catch (err) {
