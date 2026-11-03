@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { AudioController } from './audio/AudioController';
+import { EditorScreen } from './components/EditorScreen';
 import { ImportScreen } from './components/ImportScreen';
 import { ProcessingScreen } from './components/ProcessingScreen';
 import { ResultScreen } from './components/ResultScreen';
@@ -134,7 +135,7 @@ export function App() {
         {screen === 'result' && (
           <ResultScreen
             lines={project.lines}
-            confidence={project.confidence}
+            confidence={project.history.length === 0 ? project.confidence : null}
             metadata={project.metadata}
             ctrl={ctrl}
             onMetadataChange={(metadata) => dispatch({ type: 'metadata/set', metadata })}
@@ -144,15 +145,15 @@ export function App() {
           />
         )}
         {screen === 'editor' && (
-          <section className="card stack">
-            <ol>
-              {project.lines.map((l) => (
-                <li key={l.id}>
-                  {l.time ?? '—'} {l.text}
-                </li>
-              ))}
-            </ol>
-          </section>
+          <EditorScreen
+            lines={project.lines}
+            ctrl={ctrl}
+            canUndo={project.history.length > 0}
+            onEdit={(lines) => dispatch({ type: 'lines/edit', lines })}
+            onUndo={() => dispatch({ type: 'lines/undo' })}
+            onImport={(lines, metadata) => dispatch({ type: 'lines/replace', lines, confidence: null, metadata })}
+            onDone={() => setScreen('result')}
+          />
         )}
       </main>
       <footer className="footer">{t.app.footer}</footer>
