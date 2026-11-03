@@ -8,8 +8,8 @@ test('time every line by tapping, then export a valid .lrc', async ({ page }) =>
   expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
 
   await fillImport(page);
-  await expect(page.getByText('4 lines')).toBeVisible();
-  await page.getByRole('button', { name: 'Time it myself' }).click();
+  await expect(page.getByText('4 lines').first()).toBeVisible();
+  await page.getByRole('button', { name: 'or time the lines myself' }).click();
 
   await expect(page.getByRole('tab', { name: 'Tap' })).toHaveAttribute('aria-selected', 'true');
   await page.keyboard.press('Space'); // starts playback
@@ -49,7 +49,7 @@ test('time every line by tapping, then export a valid .lrc', async ({ page }) =>
 test('undo a tap and resume', async ({ page }) => {
   await page.goto('/');
   await fillImport(page);
-  await page.getByRole('button', { name: 'Time it myself' }).click();
+  await page.getByRole('button', { name: 'or time the lines myself' }).click();
   await page.keyboard.press('Space');
   await page.waitForTimeout(400);
   await page.keyboard.press('Space');

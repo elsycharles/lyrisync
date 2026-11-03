@@ -43,7 +43,7 @@ test('open pasted .lrc, nudge and batch-shift, then export', async ({ page }) =>
 test('import an .lrc file in the adjustment editor', async ({ page }) => {
   await page.goto('/');
   await fillImport(page, 'Placeholder line');
-  await page.getByRole('button', { name: 'Time it myself' }).click();
+  await page.getByRole('button', { name: 'or time the lines myself' }).click();
   await page.getByRole('tab', { name: 'Adjust' }).click();
   await page.getByTestId('lrc-input').setInputFiles({
     name: 'existing.lrc',

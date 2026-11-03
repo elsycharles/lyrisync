@@ -35,7 +35,7 @@ export function EditorScreen(props: Props) {
   };
 
   return (
-    <section className="card stack" aria-labelledby={`${baseId}-title`}>
+    <section className="card stack editor" aria-labelledby={`${baseId}-title`}>
       <h2 id={`${baseId}-title`} className="visually-hidden">
         {t.editor.title}
       </h2>
@@ -58,7 +58,10 @@ export function EditorScreen(props: Props) {
         ))}
       </div>
 
-      <Player ctrl={props.ctrl} variant="clock" />
+      {/* Stays in view while the line list scrolls. */}
+      <div className="sticky-player">
+        <Player ctrl={props.ctrl} variant="clock" />
+      </div>
 
       <div id={`${baseId}-panel`} role="tabpanel" aria-labelledby={`${baseId}-${mode}`}>
         {mode === 'tap' ? (

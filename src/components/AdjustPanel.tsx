@@ -241,7 +241,7 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
           {t.editor.importEmpty}
         </p>
       )}
-      <p className="hint">{t.editor.keyboardHint}</p>
+      <p className="hint hint--keyboard">{t.editor.keyboardHint}</p>
 
       <div className="toolbar">
         <button type="button" className="btn btn--ghost" onClick={() => fileRef.current?.click()}>

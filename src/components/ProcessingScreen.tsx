@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { formatBytes } from '../lib/number';
+import { formatDuration } from '../lib/time';
 import type { PipelinePhase, PipelineState } from '../state/useSyncPipeline';
+import { ChipIcon } from './icons';
 
-const ORDER: PipelinePhase[] = ['decoding', 'loading', 'separating', 'listening', 'reading', 'aligning', 'done'];
+type Stage = Exclude<PipelinePhase, 'idle' | 'done' | 'error'>;
 
 interface Props {
   state: PipelineState;
@@ -12,82 +15,144 @@ interface Props {
   onManual: () => void;
 }
 
+/** Rough share of the total time each stage takes, so the overall bar moves evenly. */
+function stageWeight(stage: Stage, downloading: boolean): number {
+  switch (stage) {
+    case 'loading':
+      return downloading ? 10 : 1;
+    case 'separating':
+      return 2;
+    case 'listening':
+      return 3;
+    case 'reading':
+      return 6;
+    default:
+      return 1;
+  }
+}
+
 export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }: Props) {
   const { t, lang } = useI18n();
+  const elapsed = useElapsedSeconds();
 
   if (state.phase === 'error' && state.error) {
     return (
-      <section className="card stack" aria-labelledby="processing-title" role="alert">
-        <h2 id="processing-title">{t.processing.errorTitle}</h2>
-        <div className="notice notice--error">
-          <strong>{t.processing.errors[state.error.kind]}</strong>
-          <details className="error-detail">
-            <summary>{t.processing.details}</summary>
-            <code>{state.error.detail}</code>
-          </details>
+      <section className="card processing processing--error" aria-labelledby="processing-title" role="alert">
+        <div className="processing__head">
+          <span className="error-badge" aria-hidden="true">
+            !
+          </span>
+          <h2 id="processing-title">{t.processing.errorTitle}</h2>
         </div>
-        <div className="btn-row">
-          <button type="button" className="btn btn--ghost" onClick={onBack}>
-            {t.processing.back}
+        <p className="processing__message">{t.processing.errors[state.error.kind]}</p>
+        <details className="error-detail">
+          <summary>{t.processing.details}</summary>
+          <code>{state.error.detail}</code>
+        </details>
+        {state.error.kind === 'decode' ? (
+          // The same file would fail again: the only way forward is another file.
+          <button type="button" className="btn btn--primary" onClick={onBack}>
+            {t.processing.otherFile}
           </button>
-          <button type="button" className="btn btn--ghost" onClick={onManual}>
-            {t.processing.manual}
-          </button>
-          <button type="button" className="btn btn--primary" onClick={onRetry}>
-            {t.processing.retry}
-          </button>
-        </div>
+        ) : (
+          <div className="btn-row">
+            <button type="button" className="btn btn--ghost" onClick={onBack}>
+              {t.processing.back}
+            </button>
+            <button type="button" className="btn btn--ghost" onClick={onManual}>
+              {t.processing.manual}
+            </button>
+            <button type="button" className="btn btn--primary" onClick={onRetry}>
+              {t.processing.retry}
+            </button>
+          </div>
+        )}
       </section>
     );
   }
 
-  const current = ORDER.indexOf(state.phase);
-  const status = (phase: PipelinePhase) => {
-    const i = ORDER.indexOf(phase);
-    if (i < current) return 'done';
-    if (i === current) return 'active';
-    return 'pending';
+  const stages: Stage[] = ['decoding', 'loading', 'separating', 'listening', ...(state.mode === 'max' ? (['reading'] as const) : []), 'aligning'];
+  const labels: Record<Stage, string> = {
+    decoding: t.processing.stepDecode,
+    loading: t.processing.stepModel,
+    separating: t.processing.stepSeparate,
+    listening: t.processing.stepListen,
+    reading: t.processing.stepRead,
+    aligning: t.processing.stepAlign,
+  };
+  const currentIndex = Math.max(0, stages.indexOf(state.phase as Stage));
+  const current = stages[currentIndex]!;
+  const download = state.download;
+  const downloading = !!download && download.total > 0 && download.loaded < download.total;
+  const stepRatio = state.step && state.step.total > 0 ? state.step.done / state.step.total : 0;
+  const currentRatio = current === 'loading' ? (download && download.total > 0 ? download.loaded / download.total : 0) : stepRatio;
+
+  const weights = stages.map((s) => stageWeight(s, s === 'loading' && downloading));
+  const total = weights.reduce((a, b) => a + b, 0);
+  const done = weights.slice(0, currentIndex).reduce((a, b) => a + b, 0) + weights[currentIndex]! * currentRatio;
+  const pct = state.phase === 'done' ? 100 : Math.min(99, Math.round((done / total) * 100));
+
+  const detailFor = (stage: Stage, status: 'done' | 'active' | 'pending'): string | undefined => {
+    if (stage === 'loading') {
+      if (download && download.total > 0) return t.processing.downloaded(formatBytes(download.loaded, lang), formatBytes(download.total, lang));
+      if (status === 'done') return t.processing.fromCache;
+      return undefined;
+    }
+    if (status === 'active' && state.step && state.step.total > 1 && (stage === 'separating' || stage === 'listening' || stage === 'reading')) {
+      return t.processing.chunk(state.step.done, state.step.total);
+    }
+    return undefined;
   };
 
-  const download = state.download;
-  const downloadRatio = download && download.total > 0 ? download.loaded / download.total : null;
-  const step = state.step;
-  const stepRatio = step && step.total > 0 ? step.done / step.total : null;
-  const stepFor = (phase: PipelinePhase) =>
-    status(phase) === 'active' && step
-      ? { detail: t.processing.chunk(step.done, step.total), ratio: stepRatio }
-      : { detail: undefined, ratio: null };
-
   return (
-    <section className="card stack" aria-labelledby="processing-title" aria-busy="true">
-      <h2 id="processing-title">{t.processing.title}</h2>
+    <section className="card processing" aria-labelledby="processing-title" aria-busy="true">
+      <div className="processing__head">
+        <span className="equalizer" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+        </span>
+        <div>
+          <h2 id="processing-title">{t.processing.title}</h2>
+          <p className="processing__current" aria-live="polite">
+            {labels[current]}
+          </p>
+        </div>
+      </div>
+
+      <div className="progress">
+        <div
+          className="progress__track"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={pct}
+          aria-label={t.processing.title}
+        >
+          <span className="progress__fill" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="progress__meta">
+          <span className="progress__pct">{t.processing.percent(pct)}</span>
+          <span>{t.processing.elapsed(formatDuration(elapsed))}</span>
+        </div>
+      </div>
+
       <ol className="steps">
-        <Step status={status('decoding')} label={t.processing.stepDecode} />
-        <Step
-          status={status('loading')}
-          label={t.processing.stepModel}
-          detail={
-            download && download.total > 0
-              ? t.processing.downloaded(formatBytes(download.loaded, lang), formatBytes(download.total, lang))
-              : status('loading') === 'done' && !download
-                ? t.processing.fromCache
-                : undefined
-          }
-          ratio={status('loading') === 'active' ? downloadRatio : null}
-        />
-        <Step status={status('separating')} label={t.processing.stepSeparate} {...stepFor('separating')} />
-        <Step status={status('listening')} label={t.processing.stepListen} {...stepFor('listening')} />
-        {state.mode === 'max' && (
-          <Step status={status('reading')} label={t.processing.stepRead} {...stepFor('reading')} />
-        )}
-        <Step status={status('aligning')} label={t.processing.stepAlign} />
+        {stages.map((stage, i) => {
+          const status = i < currentIndex ? 'done' : i === currentIndex ? 'active' : 'pending';
+          return <Step key={stage} status={status} label={labels[stage]} detail={detailFor(stage, status)} />;
+        })}
       </ol>
-      {state.device && (
-        <p className="hint">
-          {t.processing.deviceLabel} {t.processing.device[state.device]}
-        </p>
-      )}
-      <p className="hint">{t.processing.keepOpen}</p>
+
+      <div className="processing__foot">
+        {state.device && (
+          <span className="chip chip--quiet">
+            <ChipIcon size={14} /> {t.processing.device[state.device]}
+          </span>
+        )}
+        <p className="hint">{downloading ? t.processing.firstRun : t.processing.keepOpen}</p>
+      </div>
       <button type="button" className="btn btn--ghost" onClick={onCancel}>
         {t.processing.cancel}
       </button>
@@ -95,17 +160,17 @@ export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }:
   );
 }
 
-function Step({
-  status,
-  label,
-  detail,
-  ratio = null,
-}: {
-  status: 'done' | 'active' | 'pending';
-  label: string;
-  detail?: string;
-  ratio?: number | null;
-}) {
+function useElapsedSeconds(): number {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const id = setInterval(() => setSeconds(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return seconds;
+}
+
+function Step({ status, label, detail }: { status: 'done' | 'active' | 'pending'; label: string; detail?: string }) {
   return (
     <li className={`step step--${status}`} aria-current={status === 'active' ? 'step' : undefined}>
       <span className="step__icon" aria-hidden="true">
@@ -115,22 +180,8 @@ function Step({
           </svg>
         ) : null}
       </span>
-      <span className="step__body">
-        <span className="step__label">{label}</span>
-        {detail && <span className="step__detail">{detail}</span>}
-        {ratio !== null && (
-          <span
-            className="meter"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(ratio * 100)}
-            aria-label={label}
-          >
-            <span style={{ width: `${Math.round(ratio * 100)}%` }} />
-          </span>
-        )}
-      </span>
+      <span className="step__label">{label}</span>
+      {detail && <span className="step__detail">{detail}</span>}
     </li>
   );
 }

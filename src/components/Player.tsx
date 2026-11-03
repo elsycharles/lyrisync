@@ -9,11 +9,12 @@ const RATES = [1, 0.75, 0.5];
 interface Props {
   ctrl: AudioController;
   title?: string;
+  subtitle?: string;
   /** 'track' shows the title and m:ss times; 'clock' shows a precise clock and a speed control. */
   variant?: 'track' | 'clock';
 }
 
-export function Player({ ctrl, title, variant = 'track' }: Props) {
+export function Player({ ctrl, title, subtitle, variant = 'track' }: Props) {
   const { t } = useI18n();
   const playing = usePlaying(ctrl);
   const duration = useDuration(ctrl);
@@ -75,7 +76,12 @@ export function Player({ ctrl, title, variant = 'track' }: Props) {
           </>
         ) : (
           <>
-            {title && <span className="track-title">{title}</span>}
+            {(title || subtitle) && (
+              <span className="track-text">
+                {title && <span className="track-title">{title}</span>}
+                {subtitle && <span className="track-artist">{subtitle}</span>}
+              </span>
+            )}
             <span className="times">
               <span ref={clockRef} /> / {hasDuration ? formatDuration(duration) : '–:––'}
             </span>
