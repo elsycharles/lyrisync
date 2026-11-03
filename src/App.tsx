@@ -4,7 +4,7 @@ import { EditorScreen } from './components/EditorScreen';
 import { ImportScreen } from './components/ImportScreen';
 import { ProcessingScreen } from './components/ProcessingScreen';
 import { ResultScreen } from './components/ResultScreen';
-import { TopBar } from './components/TopBar';
+import { TopBar, type FlowStep } from './components/TopBar';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { useDevice } from './hooks/useDevice';
 import { useI18n } from './i18n/useI18n';
@@ -100,10 +100,12 @@ export function App() {
     setScreen(project.audio ? 'editor' : 'import');
   }, [project.audio, project.lyricsText]);
 
+  const flowStep: FlowStep = screen === 'import' ? 0 : screen === 'processing' ? 1 : 2;
+
   return (
     <div className="shell">
-      <TopBar step={t.app.steps[screen]} />
-      <main className="main" ref={mainRef} tabIndex={-1}>
+      <TopBar step={flowStep} />
+      <main className={`main main--${screen}`} ref={mainRef} tabIndex={-1}>
         {screen === 'import' && (
           <ImportScreen
             lyricsText={project.lyricsText}
@@ -157,7 +159,10 @@ export function App() {
           />
         )}
       </main>
-      <footer className="footer">{t.app.footer}</footer>
+      <footer className="footer">
+        <span>{t.app.footer}</span>
+        <span className="footer__version">{t.app.version(__APP_VERSION__)}</span>
+      </footer>
       <UpdatePrompt />
       {project.audio && (
         <audio

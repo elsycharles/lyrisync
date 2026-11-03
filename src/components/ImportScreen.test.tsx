@@ -30,17 +30,19 @@ function setup(overrides: Partial<Parameters<typeof ImportScreen>[0]> = {}) {
 const audio: AudioAsset = { file: new File(['x'], 'song.mp3', { type: 'audio/mpeg' }), url: 'blob:x', duration: 228 };
 
 describe('ImportScreen', () => {
-  it('disables sync until lyrics and audio are both present', () => {
+  it('disables sync until lyrics and audio are both present, and says what is missing', () => {
     setup({ lyricsText: 'One line' });
     expect(screen.getByRole('button', { name: 'Sync lyrics' })).toBeDisabled();
-    expect(screen.getByText('Add an audio file to get started.')).toBeInTheDocument();
+    const checklist = document.querySelector('.checklist')!;
+    expect(checklist.querySelector('.is-ok')).toHaveTextContent('Lyrics');
+    expect(checklist.querySelectorAll('.is-ok')).toHaveLength(1);
   });
 
   it('starts the sync when ready', async () => {
     const props = setup({ lyricsText: 'One line\nTwo lines', audio });
-    expect(screen.getByText('2 lines')).toBeInTheDocument();
+    expect(screen.getAllByText('2 lines').length).toBeGreaterThan(0);
     expect(screen.getByText('song.mp3')).toBeInTheDocument();
-    expect(screen.getByText(/3:48/)).toBeInTheDocument();
+    expect(screen.getAllByText(/3:48/).length).toBeGreaterThan(0);
     await userEvent.click(screen.getByRole('button', { name: 'Sync lyrics' }));
     expect(props.onSync).toHaveBeenCalledOnce();
   });
@@ -60,10 +62,22 @@ describe('ImportScreen', () => {
     expect(props.onAudioFile).toHaveBeenCalledOnce();
   });
 
-  it('shows the download size of each mode for the detected device', () => {
-    setup({ device: 'webgpu', settings: { language: 'mg', mode: 'max' } });
-    expect(screen.getByRole('option', { name: /Maximum accuracy — ~1257 MB/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /Fast — ~671 MB/ })).toBeInTheDocument();
-    expect(screen.getByText(/cross-checks with a transcription/)).toBeInTheDocument();
+  it('shows each mode with its time and download size for the detected device', async () => {
+    const props = setup({ device: 'webgpu', settings: { language: 'mg', mode: 'max' } });
+    expect(screen.getByRole('radio', { name: /Maximum accuracy/ })).toBeChecked();
+    expect(screen.getByText('1257 MB on first run')).toBeInTheDocument();
+    expect(screen.getByText('671 MB on first run')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: /Fast/ }));
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ mode: 'fast' });
+  });
+
+  it('picks the sung language with a segmented control, arrows included', async () => {
+    const props = setup({ settings: { language: 'auto', mode: 'max' } });
+    expect(screen.getByRole('radio', { name: 'Auto' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByRole('radio', { name: 'Malagasy' }));
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ language: 'mg' });
+    screen.getByRole('radio', { name: 'Auto' }).focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ language: 'fr' });
   });
 });

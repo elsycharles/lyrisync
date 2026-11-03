@@ -2,19 +2,19 @@ import { expect, test } from '@playwright/test';
 
 test('switches language and theme, and remembers them', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'New sync' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your lyrics, synced automatically' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Passer en français' }).click();
-  await expect(page.getByRole('heading', { name: 'Nouvelle synchro' })).toBeVisible();
+  await page.getByRole('button', { name: 'Français' }).click();
+  await expect(page.getByRole('heading', { name: 'Vos paroles, synchronisées automatiquement' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
 
-  await page.getByRole('button', { name: 'Changer de thème' }).click();
+  await page.getByRole('button', { name: /Changer de thème/ }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.getByRole('button', { name: 'Changer de thème' }).click();
+  await page.getByRole('button', { name: /Changer de thème/ }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Nouvelle synchro' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Vos paroles, synchronisées automatiquement' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
@@ -23,7 +23,7 @@ test('blocks the sync until lyrics and audio are present, and rejects non-audio 
   const sync = page.getByRole('button', { name: 'Sync lyrics' });
   await expect(sync).toBeDisabled();
   await page.getByRole('textbox', { name: 'Lyrics' }).fill('[Chorus]\nOne line');
-  await expect(page.getByText('1 line', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 line', { exact: true }).first()).toBeVisible();
   await expect(sync).toBeDisabled();
   await page.getByTestId('audio-input').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('x') });
   await expect(page.getByRole('alert')).toContainText('does not look like an audio file');

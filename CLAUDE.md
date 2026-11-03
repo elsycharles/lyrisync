@@ -34,7 +34,8 @@ Alignment changes also need the benchmark (see README "Benchmark"): `node script
 
 ## Design rules (from the visual identity)
 
-- Violet `#6C4CF1` = actions only (buttons, links), never a state. On dark backgrounds use `#9B82FF` for text/icons; white-on-`#6C4CF1` fills are fine in both themes.
+- Violet `#6C4CF1` = actions and what the user selected (buttons, links, the chosen option card, ticked lines, as in the mockups); never a status. On dark backgrounds use `#9B82FF` for text/icons; white-on-`#6C4CF1` fills are fine in both themes.
+- Layout: page width `--page-width` (1120 px); import and result switch to one column at 960 px, the stepper to its compact form at 860 px. Check new screens for horizontal overflow from 320 px to 1440 px.
 - Mint = the reading position only.
 - Mint, amber, red are background colours with charcoal (or white on red) text. As text, use `--green-text` / `--amber-text`.
 - The reliability badge is neutral ≥ 85 %, amber below, red below 70 %.

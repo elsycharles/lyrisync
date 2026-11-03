@@ -55,7 +55,7 @@ describe('ResultScreen', () => {
   it('exports and opens the editor', async () => {
     const props = setup(0.9);
     await userEvent.click(screen.getByRole('button', { name: 'Export .lrc' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Fix timing' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Adjust timing' }));
     expect(props.onExport).toHaveBeenCalledOnce();
     expect(props.onFixTiming).toHaveBeenCalledOnce();
   });

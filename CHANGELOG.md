@@ -16,6 +16,16 @@ All notable changes to this project are documented here. The format follows
   MMS + Whisper anchors, ~20 s per song on WebGPU) and "Fast" (~6 s).
 - The confidence badge now shows a calibrated reliability, and uncertain lines are
   marked "to check" instead of being left untimed.
+- Redesigned interface:
+  - a step indicator in the top bar, with an icon theme toggle and an FR | EN switch;
+  - the import screen gets an introduction, a two-column layout, mode cards, a
+    segmented language picker and a checklist of what is still missing;
+  - the processing screen shows overall progress, elapsed time and an animated logo;
+  - the result screen keeps the player, a large "now playing" line and the actions in
+    view beside the line list;
+  - the editor's player stays visible while the list scrolls;
+  - checked for overflow from 320 px to 1440 px wide; keyboard tips are hidden on
+    touch screens.
 
 ### Added
 
