@@ -1,0 +1,89 @@
+/*
+ * LyriSync design tokens. Every text/background pair clears WCAG AA (4.5:1).
+ *
+ * Usage rules (they matter more than the values):
+ * - Violet is reserved for actions (buttons, links). It never signals a state.
+ * - Mint marks the reading position only.
+ * - Mint, amber and red are background colours, never text on the light background.
+ *   To write in those colours, use the deep variants (--ls-green-text, --ls-amber-text).
+ * - #6C4CF1 does not hold on the deep violet base (3.1:1): on dark backgrounds, use #9B82FF.
+ */
+:root {
+  /* Fixed brand values */
+  --ls-base: #221b3d;
+  --ls-accent-fill: #6c4cf1; /* buttons with white text, in both themes */
+  --ls-red-fill: #c62217;
+  --ls-amber-fill: #ffc857;
+  --ls-charcoal: #1f2430;
+
+  /* Light theme (default) */
+  --bg: #f8f6f3;
+  --surface: #ffffff;
+  --field: #ffffff;
+  --ink: #1f2430;
+  --muted: #5f6673;
+  --line: #e6e2db;
+  --accent: #6c4cf1; /* links, icons, focus rings */
+  --accent-tint: rgba(108, 76, 241, 0.1);
+  --accent-disc: rgba(108, 76, 241, 0.14);
+  --mint: #2dd4a7;
+  --mint-tint: rgba(45, 212, 167, 0.2);
+  --green-text: #0b7a5d;
+  --amber-text: #8a5a00;
+  --error-line: #c62217;
+  --error-text: #c62217;
+  --shadow: 0 1px 2px rgba(31, 36, 48, 0.06), 0 6px 20px rgba(31, 36, 48, 0.06);
+
+  --font-display: 'Sora', 'Trebuchet MS', sans-serif;
+  --font-body: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --radius-sm: 7px;
+  --radius: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #15111f;
+    --surface: #201a30;
+    --field: #191426;
+    --ink: #ecedef;
+    --muted: #a7b0bf;
+    --line: #2e2742;
+    --accent: #9b82ff;
+    --accent-tint: rgba(155, 130, 255, 0.14);
+    --accent-disc: rgba(155, 130, 255, 0.16);
+    --mint: #4be3bc;
+    --mint-tint: rgba(75, 227, 188, 0.16);
+    --green-text: #4be3bc;
+    --amber-text: #ffc857;
+    --error-line: #ff8a80;
+    --error-text: #ff8a80;
+    --shadow: none;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #15111f;
+  --surface: #201a30;
+  --field: #191426;
+  --ink: #ecedef;
+  --muted: #a7b0bf;
+  --line: #2e2742;
+  --accent: #9b82ff;
+  --accent-tint: rgba(155, 130, 255, 0.14);
+  --accent-disc: rgba(155, 130, 255, 0.16);
+  --mint: #4be3bc;
+  --mint-tint: rgba(75, 227, 188, 0.16);
+  --green-text: #4be3bc;
+  --amber-text: #ffc857;
+  --error-line: #ff8a80;
+  --error-text: #ff8a80;
+  --shadow: none;
+}
