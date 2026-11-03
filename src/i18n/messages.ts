@@ -75,6 +75,35 @@ export const fr = {
     back: 'Retour',
     manual: 'Caler moi-même',
   },
+  player: {
+    play: 'Lecture',
+    pause: 'Pause',
+    seek: 'Position dans le morceau',
+    position: 'Position de lecture',
+    speed: (rate: number) => `Vitesse de lecture ${rate}×, changer`,
+    speedHint: 'Ralentir aide à viser sur les passages rapides',
+  },
+  result: {
+    title: 'Résultat',
+    linesLabel: 'Lignes synchronisées',
+    confidence: (pct: number) => `Confiance ${pct} %`,
+    confidenceHint: 'Part des mots des paroles retrouvés dans l’audio',
+    needsTiming: 'à caler',
+    untimedNotice: (n: number) =>
+      n === 1
+        ? '1 ligne sans timing : elle sera estimée à l’export.'
+        : `${n} lignes sans timing : elles seront estimées à l’export.`,
+    fixNow: 'Les caler maintenant',
+    metadata: 'Infos du morceau (optionnel)',
+    trackTitle: 'Titre',
+    artist: 'Artiste',
+    album: 'Album',
+    fixTiming: 'Corriger le timing',
+    export: 'Exporter le .lrc',
+    spaceHint: 'Espace : lecture/pause',
+    restart: 'Nouvelle synchro',
+    restartConfirm: 'Recommencer ? Les timings actuels seront perdus si vous ne les avez pas exportés.',
+  },
 };
 
 export type Messages = typeof fr;
@@ -150,6 +179,35 @@ export const en: Messages = {
     retry: 'Try again',
     back: 'Back',
     manual: 'Time it myself',
+  },
+  player: {
+    play: 'Play',
+    pause: 'Pause',
+    seek: 'Position in the track',
+    position: 'Playback position',
+    speed: (rate: number) => `Playback speed ${rate}×, change`,
+    speedHint: 'Slowing down helps you aim on fast passages',
+  },
+  result: {
+    title: 'Result',
+    linesLabel: 'Synced lines',
+    confidence: (pct: number) => `Confidence ${pct}%`,
+    confidenceHint: 'Share of the lyric words found in the audio',
+    needsTiming: 'needs timing',
+    untimedNotice: (n: number) =>
+      n === 1
+        ? '1 line has no timing: it will be estimated on export.'
+        : `${n} lines have no timing: they will be estimated on export.`,
+    fixNow: 'Time them now',
+    metadata: 'Track info (optional)',
+    trackTitle: 'Title',
+    artist: 'Artist',
+    album: 'Album',
+    fixTiming: 'Fix timing',
+    export: 'Export .lrc',
+    spaceHint: 'Space: play/pause',
+    restart: 'New sync',
+    restartConfirm: 'Start over? Current timings will be lost unless you exported them.',
   },
 };
 

@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { AudioController } from './audio/AudioController';
 import { ImportScreen } from './components/ImportScreen';
 import { ProcessingScreen } from './components/ProcessingScreen';
+import { ResultScreen } from './components/ResultScreen';
 import { TopBar } from './components/TopBar';
 import { useDevice } from './hooks/useDevice';
 import { useI18n } from './i18n/useI18n';
-import { parseLrc } from './lib/lrc';
+import { downloadText, safeFileName } from './lib/download';
+import { parseLrc, serializeLrc } from './lib/lrc';
 import { parseLyrics } from './lib/lyrics';
+import { fillMissingTimes } from './lib/timing';
 import { initialProject, projectReducer } from './state/project';
 import { useSettings } from './state/settings';
 import { useSyncPipeline } from './state/useSyncPipeline';
@@ -19,7 +23,7 @@ export function App() {
   const { settings, update: updateSettings } = useSettings();
   const device = useDevice();
   const pipeline = useSyncPipeline();
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const ctrl = useMemo(() => new AudioController(), []);
 
   // Release the previous object URL whenever the audio file changes.
   const audioUrl = project.audio?.url;
@@ -74,6 +78,20 @@ export function App() {
     setScreen('editor');
   }, [pipeline, project.lyricsText]);
 
+  const exportLrc = useCallback(() => {
+    const lines = fillMissingTimes(project.lines, project.audio?.duration ?? undefined);
+    const text = serializeLrc(lines, { metadata: project.metadata, tool: `LyriSync ${__APP_VERSION__}` });
+    downloadText(`${safeFileName(project.metadata.title ?? '')}.lrc`, text);
+  }, [project.lines, project.audio?.duration, project.metadata]);
+
+  const restart = useCallback(() => {
+    if (hasWork && !window.confirm(t.result.restartConfirm)) return;
+    ctrl.pause();
+    pipeline.reset();
+    dispatch({ type: 'lines/replace', lines: [], confidence: null });
+    setScreen('import');
+  }, [ctrl, hasWork, pipeline, t]);
+
   const openLrcText = useCallback(() => {
     const { lines, metadata } = parseLrc(project.lyricsText);
     dispatch({ type: 'lines/replace', lines, confidence: null, metadata });
@@ -113,7 +131,19 @@ export function App() {
             onManual={startManual}
           />
         )}
-        {(screen === 'result' || screen === 'editor') && (
+        {screen === 'result' && (
+          <ResultScreen
+            lines={project.lines}
+            confidence={project.confidence}
+            metadata={project.metadata}
+            ctrl={ctrl}
+            onMetadataChange={(metadata) => dispatch({ type: 'metadata/set', metadata })}
+            onFixTiming={() => setScreen('editor')}
+            onExport={exportLrc}
+            onRestart={restart}
+          />
+        )}
+        {screen === 'editor' && (
           <section className="card stack">
             <ol>
               {project.lines.map((l) => (
@@ -128,7 +158,7 @@ export function App() {
       <footer className="footer">{t.app.footer}</footer>
       {project.audio && (
         <audio
-          ref={audioRef}
+          ref={ctrl.attach}
           src={project.audio.url}
           preload="metadata"
           onLoadedMetadata={(e) => dispatch({ type: 'audio/duration', duration: e.currentTarget.duration })}
