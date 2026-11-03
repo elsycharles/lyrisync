@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type DragEvent } from 'react';
-import { ACCEPTED_AUDIO, formatBytes } from '../lib/audio';
+import { ACCEPTED_AUDIO } from '../lib/audio';
+import { formatBytes } from '../lib/number';
 import { formatDuration } from '../lib/time';
 import { useI18n } from '../i18n/useI18n';
 import type { AudioAsset } from '../state/project';
@@ -16,7 +17,7 @@ interface Props {
 }
 
 export function AudioDropzone({ audio, onFile }: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const [dragging, setDragging] = useState(false);
@@ -66,7 +67,7 @@ export function AudioDropzone({ audio, onFile }: Props) {
               <span className="dropzone__file">{audio.file.name}</span>
               <span className="dropzone__meta">
                 {audio.duration !== null && `${formatDuration(audio.duration)} · `}
-                {formatBytes(audio.file.size)}
+                {formatBytes(audio.file.size, lang)}
               </span>
             </span>
             <button

@@ -3,6 +3,7 @@ import type { AudioController } from '../audio/AudioController';
 import { usePlaybackSelector } from '../audio/usePlayback';
 import { useI18n } from '../i18n/useI18n';
 import { parseLrc } from '../lib/lrc';
+import { formatDecimal, parseDecimal } from '../lib/number';
 import { formatTimestamp, roundCs } from '../lib/time';
 import { activeLineIndex, nudgeLine, shiftLines } from '../lib/timing';
 import type { LrcMetadata, LyricLine } from '../lib/types';
@@ -21,10 +22,11 @@ interface Props {
 
 /** Fine tuning: select a line and nudge it, or tick several and shift the whole block. */
 export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, onDone }: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [selectedId, setSelectedId] = useState<string | null>(() => lines.find((l) => l.time === null)?.id ?? null);
   const [ticked, setTicked] = useState<Set<string>>(() => new Set());
-  const [shiftBy, setShiftBy] = useState(-0.2);
+  const [shiftText, setShiftText] = useState(() => formatDecimal(-0.2, lang));
+  const shiftBy = parseDecimal(shiftText);
   const [importError, setImportError] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
@@ -206,24 +208,31 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
       {liveTicked.size > 0 && (
         <div className="batchbar">
           <span className="count">{t.editor.ticked(liveTicked.size)}</span>
-          <label className="visually-hidden" htmlFor={shiftId}>
-            {t.editor.shiftBy}
-          </label>
-          <input
-            id={shiftId}
-            className="input input--small"
-            type="number"
-            step={0.1}
-            value={shiftBy}
-            onChange={(e) => setShiftBy(Number(e.target.value))}
-          />
-          <button
-            type="button"
-            disabled={!Number.isFinite(shiftBy) || shiftBy === 0}
-            onClick={() => onEdit(shiftLines(lines, liveTicked, shiftBy))}
-          >
-            {t.editor.shift(t.editor.seconds(roundCs(shiftBy)))}
-          </button>
+          <span className="batchbar__actions">
+            <label className="visually-hidden" htmlFor={shiftId}>
+              {t.editor.shiftBy}
+            </label>
+            <input
+              id={shiftId}
+              className="input input--small"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              value={shiftText}
+              aria-invalid={!Number.isFinite(shiftBy)}
+              onChange={(e) => setShiftText(e.target.value)}
+            />
+            <span className="batchbar__unit" aria-hidden="true">
+              s
+            </span>
+            <button
+              type="button"
+              disabled={!Number.isFinite(shiftBy) || shiftBy === 0}
+              onClick={() => onEdit(shiftLines(lines, liveTicked, roundCs(shiftBy)))}
+            >
+              {Number.isFinite(shiftBy) ? t.editor.shift(t.editor.seconds(roundCs(shiftBy))) : t.editor.shiftInvalid}
+            </button>
+          </span>
         </div>
       )}
 

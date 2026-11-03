@@ -112,8 +112,8 @@ describe('adjust mode', () => {
     expect(screen.getByRole('tab', { name: 'Adjust' })).toHaveAttribute('aria-selected', 'true');
 
     await userEvent.click(screen.getByRole('button', { name: 'Select the line “Line 2”' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Shift by + 0.1 s' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Shift by − 1 s' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Shift by +0.1 s' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Shift by −1 s' }));
     expect(latest[1]).toMatchObject({ time: 14.1, source: 'manual' });
 
     fireEvent.keyDown(document.body, { key: 'ArrowRight', shiftKey: true });
@@ -132,7 +132,7 @@ describe('adjust mode', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Tick the line “Line 2”' }));
     await userEvent.click(screen.getByRole('checkbox', { name: 'Tick the line “Line 3”' }));
     expect(screen.getByText('2 lines ticked')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Shift by − 0.2 s' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Shift by −0.2 s' }));
     expect(latest.map((l) => l.time)).toEqual([10, 14.8, 19.8]);
   });
 
