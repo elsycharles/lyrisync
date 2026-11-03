@@ -44,19 +44,24 @@ The aligner ([src/lib/align/align.ts](src/lib/align/align.ts)) matches normalise
 - **Asymmetric gap costs:** an unwritten ad-lib ("yeah", "oh") costs little, while a lyric word that was never heard costs more.
 - **Free intro and outro:** speech before the first line or after the last one does not count against the alignment.
 - **Order is preserved:** the alignment is monotonic, so a repeated chorus always matches the next occurrence in time.
+- **Words split differently:** one lyric word can match two or three heard words ("ratatatata" heard as "rata, rata"), and two lyric words can match one. A join is allowed only between words heard back to back, and only when it beats matching each part alone.
+- **Ad-libs are optional:** words in parentheses, like "(Yeaah)", cost almost nothing when they are not heard and do not count in the confidence.
+- **Pasted text is cleaned:** Cyrillic or Greek letters that look like Latin ones (an "е" copied from a lyrics site) are read as Latin.
 - **No forced timestamps:** a line with too few matched words is left as "needs timing" rather than placed wrongly.
 
 ## Models
 
 | Setting | Checkpoint | Download (WASM / WebGPU) |
 | --- | --- | --- |
-| Fast | `onnx-community/whisper-tiny_timestamped` | ~41 MB / ~120 MB |
-| Balanced (default) | `onnx-community/whisper-base_timestamped` | ~77 MB / ~206 MB |
-| Accurate | `onnx-community/whisper-small_timestamped` | ~249 MB / ~586 MB |
+| Fast | `onnx-community/whisper-tiny_timestamped` | ~64 MB / ~120 MB |
+| Balanced (default) | `onnx-community/whisper-base_timestamped` | ~136 MB / ~206 MB |
+| Accurate (best for rap and busy mixes) | `onnx-community/whisper-small_timestamped` | ~249 MB / ~586 MB |
 
 - **First run:** the model is downloaded once from the Hugging Face Hub. The browser then keeps it in Cache Storage.
 - **WebGPU:** used when available, with a fp32 encoder and a 4-bit decoder.
-- **Fallback:** otherwise inference runs as 8-bit WASM on the CPU. If loading on WebGPU fails, LyriSync falls back to WASM automatically.
+- **Fallback:** otherwise inference runs on the CPU in WASM, with a fp32 encoder for tiny and base (an 8-bit encoder falls into "très très très…" loops on music) and 8-bit weights for small. If loading on WebGPU fails, LyriSync falls back to WASM automatically.
+- **Language:** Whisper is always told which language to transcribe. "Automatic" reads it from the pasted lyrics: left to itself, transformers.js decodes in English and translates French songs instead of transcribing them.
+- **Decoding loops:** each 30 s window is capped at 256 tokens. A window that comes back as a loop ("rata, rata, rata…") is decoded again with repeated 4-grams forbidden, and any loop left is trimmed.
 
 ## Tech stack
 

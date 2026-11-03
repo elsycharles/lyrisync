@@ -2,15 +2,18 @@
 import * as Comlink from 'comlink';
 import { env, pipeline, type AutomaticSpeechRecognitionPipeline, type ProgressInfo } from '@huggingface/transformers';
 import type { TranscribedWord } from '../lib/align/align';
+import { collapseLoops, hasRepetitionLoop } from '../lib/align/repetition';
 import { WHISPER_SAMPLE_RATE } from '../lib/audio';
 import {
-  DTYPES,
+  MAX_NEW_TOKENS,
   MODEL_IDS,
+  NO_REPEAT_NGRAM_SIZE,
   WHISPER_LANGUAGE,
+  dtypesFor,
   planChunks,
   type Device,
-  type LanguageChoice,
   type ModelSize,
+  type WhisperLanguage,
 } from './models';
 
 // Models come from the Hugging Face Hub and are cached by the browser (Cache Storage)
@@ -48,7 +51,7 @@ async function webgpuAvailable(): Promise<boolean> {
 async function createPipeline(size: ModelSize, device: Device, onProgress?: (p: DownloadProgress) => void) {
   const asr = await pipeline('automatic-speech-recognition', MODEL_IDS[size], {
     device,
-    dtype: DTYPES[device],
+    dtype: dtypesFor(size, device),
     progress_callback: (info: ProgressInfo) => {
       if (info.status === 'progress_total' && onProgress) {
         onProgress({ loaded: info.loaded, total: info.total });
@@ -88,10 +91,11 @@ const api = {
    */
   async transcribe(
     pcm: Float32Array,
-    language: LanguageChoice,
+    language: WhisperLanguage,
     onProgress?: (p: ChunkProgress) => void,
   ): Promise<TranscribedWord[]> {
     if (!current) throw new Error('Model not loaded');
+    const asr = current.asr;
     const duration = pcm.length / WHISPER_SAMPLE_RATE;
     const chunks = planChunks(duration);
     const words: TranscribedWord[] = [];
@@ -100,13 +104,35 @@ const api = {
     for (let i = 0; i < chunks.length; i++) {
       const c = chunks[i]!;
       const slice = pcm.subarray(Math.floor(c.start * WHISPER_SAMPLE_RATE), Math.floor(c.end * WHISPER_SAMPLE_RATE));
-      const output = (await current.asr(slice, {
-        return_timestamps: 'word',
-        task: 'transcribe',
-        ...(language === 'auto' ? {} : { language: WHISPER_LANGUAGE[language] }),
-      })) as { text: string; chunks?: WhisperChunk[] };
+      const t0 = performance.now();
+      const run = async (extra: object = {}) =>
+        (await asr(slice, {
+          return_timestamps: 'word',
+          task: 'transcribe',
+          // Always explicit: without it transformers.js decodes in English and translates.
+          language: WHISPER_LANGUAGE[language],
+          max_new_tokens: MAX_NEW_TOKENS,
+          ...extra,
+        })) as { text: string; chunks?: WhisperChunk[] };
 
-      for (const w of output.chunks ?? []) {
+      let output = await run();
+      let retried = false;
+      // A decoding loop ("rata, rata, rata…") hides everything sung after it in the
+      // window: decode again, this time forbidding repeated 4-grams.
+      if (hasRepetitionLoop((output.chunks ?? []).map((w) => w.text))) {
+        const retry = await run({ no_repeat_ngram_size: NO_REPEAT_NGRAM_SIZE });
+        retried = true;
+        if ((retry.chunks?.length ?? 0) > 0) output = retry;
+      }
+      // Whatever loop survives is trimmed, so it cannot soak up lyric words.
+      const heard = collapseLoops(output.chunks ?? [], (w) => w.text);
+
+      if (import.meta.env.DEV) {
+        console.debug(
+          `[lyrisync] window ${i + 1}/${chunks.length} ${c.start}-${c.end}s: ${Math.round(performance.now() - t0)} ms${retried ? ' (retried)' : ''}, ${heard.length} words: ${heard.map((w) => w.text).join('')}`,
+        );
+      }
+      for (const w of heard) {
         const start = c.start + w.timestamp[0];
         if (start < c.keepFrom || start >= c.keepUntil) continue;
         const end = w.timestamp[1] === null ? Number.NaN : c.start + w.timestamp[1];

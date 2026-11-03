@@ -3,7 +3,7 @@ import { useI18n } from '../i18n/useI18n';
 import { looksLikeLrc } from '../lib/lrc';
 import { parseLyrics } from '../lib/lyrics';
 import type { AudioAsset } from '../state/project';
-import type { SyncSettings } from '../state/settings';
+import { resolveLanguage, type SyncSettings } from '../state/settings';
 import { MODEL_DOWNLOAD_MB, type Device, type LanguageChoice, type ModelSize } from '../worker/models';
 import { AudioDropzone } from './AudioDropzone';
 
@@ -21,7 +21,7 @@ interface Props {
 }
 
 export function ImportScreen(props: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { lyricsText, audio, settings, device } = props;
   const lyricsId = useId();
   const languageId = useId();
@@ -31,6 +31,11 @@ export function ImportScreen(props: Props) {
   const lineCount = useMemo(() => (isLrc ? 0 : parseLyrics(lyricsText).length), [lyricsText, isLrc]);
   const hasLyrics = lineCount > 0;
   const ready = hasLyrics && audio !== null;
+  const resolved = useMemo(
+    () => resolveLanguage(settings.language, lyricsText, lang),
+    [settings.language, lyricsText, lang],
+  );
+  const languageName = t.import.languages[resolved.language];
 
   return (
     <section className="card stack" aria-labelledby="import-title">
@@ -104,7 +109,11 @@ export function ImportScreen(props: Props) {
         <p className="hint">
           {device === 'webgpu' ? t.import.deviceWebgpu : t.import.deviceWasm} {t.import.modelHint}
         </p>
-        {settings.language === 'mg' && <p className="hint">{t.import.malagasyHint}</p>}
+        {resolved.from === 'lyrics' && hasLyrics && <p className="hint">{t.import.languageDetected(languageName)}</p>}
+        {resolved.from === 'fallback' && hasLyrics && (
+          <p className="hint hint--warn">{t.import.languageFallback(languageName)}</p>
+        )}
+        {resolved.language === 'mg' && <p className="hint">{t.import.malagasyHint}</p>}
       </details>
 
       <div className="stack stack--tight">

@@ -31,12 +31,15 @@ export const fr = {
     change: 'Changer',
     settings: 'Réglages',
     languageLabel: 'Langue chantée',
-    languages: { auto: 'Détection automatique', fr: 'Français', en: 'Anglais', mg: 'Malgache' },
+    languages: { auto: 'Automatique (d’après les paroles)', fr: 'Français', en: 'Anglais', mg: 'Malgache' },
+    languageDetected: (name: string) => `Langue reconnue dans les paroles : ${name}.`,
+    languageFallback: (name: string) =>
+      `Langue non reconnue dans les paroles : ${name} sera utilisé. Choisissez la bonne langue si besoin.`,
     modelLabel: 'Modèle',
     models: {
       tiny: (mb: number) => `Rapide — ~${mb} Mo`,
-      base: (mb: number) => `Équilibré — ~${mb} Mo (recommandé)`,
-      small: (mb: number) => `Précis — ~${mb} Mo, plus lent`,
+      base: (mb: number) => `Équilibré — ~${mb} Mo`,
+      small: (mb: number) => `Précis — ~${mb} Mo, conseillé pour le rap et les mix chargés`,
     },
     deviceWebgpu: 'Accélération WebGPU disponible.',
     deviceWasm: 'Calcul sur le processeur (WebGPU indisponible) : comptez plus de temps.',
@@ -94,6 +97,8 @@ export const fr = {
         ? '1 ligne sans timing : elle sera estimée à l’export.'
         : `${n} lignes sans timing : elles seront estimées à l’export.`,
     fixNow: 'Les caler maintenant',
+    lowConfidence:
+      'Une partie des paroles n’a pas été reconnue : passage dans une autre langue, voix couverte par la musique ou mots coupés différemment. Le mode Taper vous emmène directement d’une ligne à caler à la suivante.',
     metadata: 'Infos du morceau (optionnel)',
     trackTitle: 'Titre',
     artist: 'Artiste',
@@ -187,12 +192,15 @@ export const en: Messages = {
     change: 'Change',
     settings: 'Settings',
     languageLabel: 'Sung language',
-    languages: { auto: 'Detect automatically', fr: 'French', en: 'English', mg: 'Malagasy' },
+    languages: { auto: 'Automatic (from the lyrics)', fr: 'French', en: 'English', mg: 'Malagasy' },
+    languageDetected: (name: string) => `Language found in the lyrics: ${name}.`,
+    languageFallback: (name: string) =>
+      `Could not tell the language from the lyrics: ${name} will be used. Pick the right one if needed.`,
     modelLabel: 'Model',
     models: {
       tiny: (mb: number) => `Fast — ~${mb} MB`,
-      base: (mb: number) => `Balanced — ~${mb} MB (recommended)`,
-      small: (mb: number) => `Accurate — ~${mb} MB, slower`,
+      base: (mb: number) => `Balanced — ~${mb} MB`,
+      small: (mb: number) => `Accurate — ~${mb} MB, best for rap and busy mixes`,
     },
     deviceWebgpu: 'WebGPU acceleration available.',
     deviceWasm: 'Running on the CPU (WebGPU unavailable): expect it to take longer.',
@@ -249,6 +257,8 @@ export const en: Messages = {
         ? '1 line has no timing: it will be estimated on export.'
         : `${n} lines have no timing: they will be estimated on export.`,
     fixNow: 'Time them now',
+    lowConfidence:
+      'Part of the lyrics was not recognised: a passage in another language, vocals buried in the mix, or words split differently. Tap mode takes you straight from one line to time to the next.',
     metadata: 'Track info (optional)',
     trackTitle: 'Title',
     artist: 'Artist',

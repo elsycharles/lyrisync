@@ -38,6 +38,11 @@ export function TapPanel({ lines, ctrl, onEdit, onUndo, onDone }: Props) {
   const { t } = useI18n();
   const playing = usePlaying(ctrl);
   const [pointer, setPointer] = useState(() => firstUntimed(lines));
+  // 'gaps': some lines are already timed (automatic pass, imported file), so each tap
+  // moves on to the next line that still needs timing. 'all': every line in turn.
+  const [mode, setMode] = useState<'gaps' | 'all'>(() =>
+    lines.some((l) => l.time !== null) && lines.some((l) => l.time === null) ? 'gaps' : 'all',
+  );
   // Pointer positions before each tap, so Undo also moves the pointer back.
   const [taps, setTaps] = useState<number[]>([]);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -50,6 +55,7 @@ export function TapPanel({ lines, ctrl, onEdit, onUndo, onDone }: Props) {
   const jumpTo = useCallback(
     (index: number) => {
       setPointer(index);
+      setMode('all');
       setTaps([]);
       const prev = previousTime(lines, index);
       ctrl.seek(prev !== null ? Math.max(0, prev - LEAD_IN) : 0);
@@ -75,10 +81,23 @@ export function TapPanel({ lines, ctrl, onEdit, onUndo, onDone }: Props) {
       return;
     }
     const time = roundCs(ctrl.currentTime());
-    onEdit(lines.map((l, i) => (i === pointer ? { ...l, time, source: 'tap' } : l)));
+    const next = lines.map((l, i) => (i === pointer ? { ...l, time, source: 'tap' as const } : l));
+    onEdit(next);
     setTaps((s) => [...s, pointer]);
-    setPointer((p) => p + 1);
-  }, [ctrl, finished, lines, onEdit, pointer]);
+    if (mode === 'all') {
+      setPointer(pointer + 1);
+      return;
+    }
+    // Filling gaps: go to the next untimed line. If it is not the very next one, jump
+    // the playback to just before it rather than make the user sit through timed lines.
+    let gap = pointer + 1;
+    while (gap < next.length && next[gap]!.time !== null) gap++;
+    setPointer(gap);
+    if (gap > pointer + 1 && gap < next.length) {
+      const prev = previousTime(next, gap);
+      if (prev !== null && prev - LEAD_IN > time) ctrl.seek(prev - LEAD_IN);
+    }
+  }, [ctrl, finished, lines, mode, onEdit, pointer]);
 
   const undo = useCallback(() => {
     const last = taps.at(-1);

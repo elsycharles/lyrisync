@@ -1160,3 +1160,15 @@ button.line--active:not(:disabled):hover {
     min-width: 0;
   }
 }
+
+.hint--warn {
+  color: var(--amber-text);
+  font-weight: 600;
+}
+
+.notice__detail {
+  display: block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--muted);
+}

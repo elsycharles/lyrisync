@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
-import type { LanguageChoice, ModelSize } from '../worker/models';
+import type { Lang } from '../i18n/messages';
+import { detectLyricsLanguage } from '../lib/language';
+import type { LanguageChoice, ModelSize, WhisperLanguage } from '../worker/models';
 
 export interface SyncSettings {
   language: LanguageChoice;
@@ -23,6 +25,23 @@ function read(): SyncSettings {
   } catch {
     return DEFAULTS;
   }
+}
+
+export interface ResolvedLanguage {
+  language: WhisperLanguage;
+  /** How it was decided: picked by the user, read from the lyrics, or a fallback. */
+  from: 'user' | 'lyrics' | 'fallback';
+}
+
+/**
+ * The language passed to Whisper. "Auto" reads it from the lyrics; if they give no
+ * clear answer, the interface language is used.
+ */
+export function resolveLanguage(choice: LanguageChoice, lyrics: string, uiLang: Lang): ResolvedLanguage {
+  if (choice !== 'auto') return { language: choice, from: 'user' };
+  const detected = detectLyricsLanguage(lyrics);
+  if (detected) return { language: detected, from: 'lyrics' };
+  return { language: uiLang, from: 'fallback' };
 }
 
 export function useSettings() {

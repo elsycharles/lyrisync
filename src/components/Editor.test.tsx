@@ -93,6 +93,23 @@ describe('tap mode', () => {
     expect(ctrl.now).toBe(8.5);
   });
 
+  it('when filling gaps, skips timed lines and cues the next gap', () => {
+    const ctrl = new FakeAudio();
+    render(<Harness initial={mk(10, null, 20, 30, null, 50)} ctrl={ctrl} />);
+    expect(screen.getByText('Line 2', { selector: '.currentline' })).toBeInTheDocument();
+    ctrl.playing = true;
+    ctrl.now = 14;
+    space();
+    expect(latest[1]!.time).toBe(14);
+    // Lines 3 and 4 are already timed: straight to line 5, playback cued before it.
+    expect(screen.getByText('Line 5', { selector: '.currentline' })).toBeInTheDocument();
+    expect(ctrl.now).toBe(28.5);
+    ctrl.now = 41;
+    space();
+    expect(latest.map((l) => l.time)).toEqual([10, 14, 20, 30, 41, 50]);
+    expect(screen.getByText('Every line has a timing.')).toBeInTheDocument();
+  });
+
   it('does not tap while typing in a field', () => {
     const ctrl = new FakeAudio();
     ctrl.playing = true;
