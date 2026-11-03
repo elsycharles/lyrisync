@@ -22,7 +22,13 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
   - inline ad-libs in parentheses are made optional;
   - numbers are spelled out ("le 9" → "le neuf");
   - Arabizi is read ("ga3ma"), and look-alike Cyrillic letters are fixed.
-- **Editor for the last touches.** Tap-to-sync, ±0.1 s / ±1 s nudges, batch shift of ticked lines, and `.lrc` import.
+- **Editor for the last touches.** Fix lines while the music plays, on the result screen or in the editor:
+  - "Set & next" (C) as a line finishes: it ends there and the next one starts at that moment;
+  - "Pause here" (P) for a silence before the next line, "Start here" (S) for a line's start;
+  - "Previous" / "Next" (Backspace / N) move between lines, the music with them;
+  - ±0.1 s / ±1 s nudges, tap-to-sync, batch shift of ticked lines, and `.lrc` import.
+
+  Pauses are written as empty timed lines, which LRC players show as a blank, and are read back on import.
 - **Private and free.** The audio never leaves the device. There is no backend, so there is no cost per use and no usage cap.
 - **Installable and offline.** It is a PWA. After the first run, the models and the app work without a connection.
 - **Interface in French and English**, with light and dark themes.

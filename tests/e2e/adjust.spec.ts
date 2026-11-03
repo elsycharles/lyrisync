@@ -53,3 +53,38 @@ test('import an .lrc file in the adjustment editor', async ({ page }) => {
   await expect(page.getByText('The harbour falls asleep behind us')).toBeVisible();
   await expect(page.getByText('Placeholder line')).toHaveCount(0);
 });
+
+test('mark a pause while the music plays, move on, and export it as a blank line', async ({ page }) => {
+  await page.goto('/');
+  await fillImport(page, ['[00:01.00]First line', '[00:04.00]Second line', '[00:08.00]Third line'].join('\n'));
+  await page.getByRole('button', { name: 'Open it in the editor' }).click();
+  await page.getByRole('button', { name: 'Select the line “First line”' }).click();
+  await page.getByRole('button', { name: 'Listen' }).click();
+  await page.waitForFunction(() => document.querySelector('audio')!.currentTime > 2.2);
+
+  // P: the line ends now, silence until the next one, which becomes the selected line.
+  await page.keyboard.press('p');
+  await expect(page.getByRole('button', { name: 'Select the line “Second line”' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.pause-mark')).toHaveCount(1);
+
+  // N: on to the next line without setting anything, the music with it.
+  await page.keyboard.press('n');
+  await expect(page.getByRole('button', { name: 'Select the line “Third line”' })).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => document.querySelector('audio')!.currentTime)).toBeGreaterThan(7.4);
+  await page.keyboard.press('Space');
+  await page.getByRole('button', { name: 'Done' }).click();
+
+  // The stage shows the pause.
+  await page.evaluate(() => (document.querySelector('audio')!.currentTime = 3.2));
+  await expect(page.locator('.lyrics-stage__meta')).toContainText('Pause');
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Export .lrc' }).click(),
+  ]);
+  const lines = lrcLines(await readFile((await download.path())!, 'utf8'));
+  expect(lines.map((l) => l.text)).toEqual(['First line', '', 'Second line', 'Third line']);
+  expect(lines[1]!.time).toBeGreaterThan(2.2);
+  expect(lines[1]!.time).toBeLessThan(3.5);
+  expect(lines.map((l) => l.time).filter((_, i) => i !== 1)).toEqual([1, 4, 8]);
+});

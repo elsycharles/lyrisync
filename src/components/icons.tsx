@@ -173,3 +173,21 @@ export function NextLineIcon({ size = 16, className }: IconProps) {
     </svg>
   );
 }
+
+export function PauseIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <rect x="4" y="3" width="2.6" height="10" rx="1" fill="currentColor" stroke="none" />
+      <rect x="9.4" y="3" width="2.6" height="10" rx="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function StartIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M3.5 2.5v11" />
+      <path d="M6.5 8h7M10.5 5l3 3-3 3" />
+    </svg>
+  );
+}

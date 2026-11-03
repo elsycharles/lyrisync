@@ -89,3 +89,29 @@ describe('looksLikeLrc', () => {
     expect(looksLikeLrc('')).toBe(false);
   });
 });
+
+describe('pauses', () => {
+  it('writes a pause as an empty timed line and reads it back', () => {
+    const src: LyricLine[] = [
+      { id: 'a', text: 'Verse', time: 10, source: 'auto', end: 13 },
+      { id: 'b', text: 'After the break', time: 30, source: 'auto' },
+      { id: 'c', text: 'No pause here', time: 33, source: 'auto', end: 33 },
+    ];
+    const text = serializeLrc(src);
+    expect(text).toBe('[00:10.00]Verse\n[00:13.00]\n[00:30.00]After the break\n[00:33.00]No pause here\n');
+    const { lines } = parseLrc(text);
+    expect(lines.map((l) => [l.text, l.time, l.end])).toEqual([
+      ['Verse', 10, 13],
+      ['After the break', 30, undefined],
+      ['No pause here', 33, undefined],
+    ]);
+  });
+
+  it('does not write a pause that ends after the next line starts', () => {
+    const text = serializeLrc([
+      { id: 'a', text: 'A', time: 1, source: 'auto', end: 5 },
+      { id: 'b', text: 'B', time: 4, source: 'auto' },
+    ]);
+    expect(text).toBe('[00:01.00]A\n[00:04.00]B\n');
+  });
+});

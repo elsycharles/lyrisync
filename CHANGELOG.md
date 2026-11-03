@@ -30,12 +30,14 @@ All notable changes to this project are documented here. The format follows
   - lines can be fixed right on the result screen: click a line for its tools
     (±0.1 s / ±1 s, set to the playhead, listen), double-click to hear it, keyboard
     shortcuts shown as key caps, and undo; double-click also plays a line in Adjust;
-  - "Set & next" (button or C key) sets the selected line to the playback position and
-    moves to the next line, so lines can be timed one after the other while the music
-    plays, on the result screen and in Adjust;
-  - going back a line takes the music with it: ⏮ / ⏭ around play/pause (result
-    stage and editor player), a "Previous" line tool and the Backspace key, with the
-    selection following on the result screen;
+  - timing from the playhead, on the result screen and in Adjust, while the music
+    plays: "Set & next" (C) is pressed as the selected line finishes — the line ends
+    there, the next one starts at that moment and becomes the selected line; "Pause
+    here" (P) ends the line with a silence until the next one; "Start here" (S) sets
+    the line's start;
+  - moving between lines takes the music with it: ⏮ / ⏭ around play/pause (result
+    stage and editor player), "Previous" (Backspace) and "Next" (N) line tools that
+    set nothing, with the selection following;
   - Adjust: grouped nudge control around the line's time, the playing line marked by
     a mint time pill, a batch bar that follows the list, "Done" as the main action;
   - checked for overflow from 320 px to 1440 px wide; keyboard tips are hidden on
@@ -43,6 +45,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Pauses: a line can end before the next one starts. The stage shows "Pause" during
+  the silence (its bar counting down to the next line) and no line is lit; rows show
+  "⏸ 00:07.20", and the line tools can remove a pause. Pauses are exported as empty
+  timed lines, the usual LRC way to blank the display, and read back on import.
 - Vocal isolation with Spleeter 2-stems (ONNX, STFT/iSTFT in TypeScript) and a vocal
   gate so no line can start in an intro, solo or break.
 - Lyrics clean-up for Genius copies: page leftovers, repeat markers ("(x2)", "×3",
@@ -54,6 +60,13 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Space plays and pauses in Adjust too (it did nothing unless the play button had the
+  focus), also when a line or one of its tools has the focus.
+- Line shortcuts keep working right after ticking a line in Adjust.
+- The editor's player and the nudge buttons fit on 320 px wide screens; flags and the
+  pause mark go under the line's text on phones.
+- The stage keeps its height between lines, intro and pauses, so the player under it
+  does not jump.
 - The line being played is always shown in green, even when it is selected or ticked;
   in Adjust the whole row turns green instead of only its time.
 - The sync progress bar no longer jumps backwards (stage weights, growing download
