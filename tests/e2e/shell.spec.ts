@@ -8,14 +8,16 @@ test('switches language and theme, and remembers them', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Vos paroles, synchronisées automatiquement' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
 
-  await page.getByRole('button', { name: /Changer de thème/ }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.getByRole('button', { name: /Changer de thème/ }).click();
+  // No theme chosen yet: the page follows the device (light in this browser).
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme');
+  await page.getByRole('button', { name: 'Passer au thème sombre' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: 'Passer au thème clair' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Vos paroles, synchronisées automatiquement' })).toBeVisible();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 });
 
 test('blocks the sync until lyrics and audio are present, and rejects non-audio files', async ({ page }) => {

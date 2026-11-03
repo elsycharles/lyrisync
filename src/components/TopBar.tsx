@@ -1,16 +1,17 @@
 import { useTheme } from '../hooks/useTheme';
 import { useI18n } from '../i18n/useI18n';
-import { AutoThemeIcon, CheckIcon, MoonIcon, SunIcon } from './icons';
+import { CheckIcon, MoonIcon, SunIcon } from './icons';
 import { Logo } from './Logo';
 
 export type FlowStep = 0 | 1 | 2;
 
-const THEME_ICONS = { system: AutoThemeIcon, light: SunIcon, dark: MoonIcon } as const;
 
 export function TopBar({ step }: { step: FlowStep }) {
   const { t, lang, setLang } = useI18n();
-  const { theme, cycle } = useTheme();
-  const ThemeIcon = THEME_ICONS[theme];
+  const { theme, toggle } = useTheme();
+  // The button shows where it takes you: a moon in light mode, a sun in dark mode.
+  const target = theme === 'dark' ? 'light' : 'dark';
+  const ThemeIcon = target === 'dark' ? MoonIcon : SunIcon;
   const steps = [t.app.stepper.import, t.app.stepper.sync, t.app.stepper.review];
 
   return (
@@ -39,9 +40,9 @@ export function TopBar({ step }: { step: FlowStep }) {
           <button
             type="button"
             className="icon-btn"
-            onClick={cycle}
-            aria-label={`${t.app.themeLabel} (${t.app.theme[theme]})`}
-            title={t.app.theme[theme]}
+            onClick={toggle}
+            aria-label={t.app.switchTheme[target]}
+            title={t.app.switchTheme[target]}
           >
             <ThemeIcon />
           </button>

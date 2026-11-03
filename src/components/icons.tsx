@@ -33,15 +33,6 @@ export function MoonIcon({ size = 16, className }: IconProps) {
   );
 }
 
-export function AutoThemeIcon({ size = 16, className }: IconProps) {
-  return (
-    <svg {...base(size)} className={className}>
-      <circle cx="8" cy="8" r="5.6" />
-      <path d="M8 2.4v11.2a5.6 5.6 0 0 0 0-11.2Z" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 export function CheckIcon({ size = 16, className }: IconProps) {
   return (
     <svg {...base(size)} className={className} strokeWidth={2}>

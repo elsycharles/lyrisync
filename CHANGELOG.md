@@ -17,7 +17,8 @@ All notable changes to this project are documented here. The format follows
 - The confidence badge now shows a calibrated reliability, and uncertain lines are
   marked "to check" instead of being left untimed.
 - Redesigned interface:
-  - a step indicator in the top bar, with an icon theme toggle and an FR | EN switch;
+  - a step indicator in the top bar, with an FR | EN switch and a light/dark toggle
+    (no "automatic" option: the page follows the device until the toggle is used);
   - the import screen gets an introduction, a two-column layout, mode cards, a
     segmented language picker and a checklist of what is still missing;
   - the processing screen shows overall progress, elapsed time and an animated logo;
