@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeLineIndex, countUntimed, fillMissingTimes, nudgeLine, shiftLines } from './timing';
+import { activeLineIndex, countUntimed, fillMissingTimes, nextTimedIndex, nudgeLine, previousTimedIndex, shiftLines } from './timing';
 import type { LyricLine } from './types';
 
 const mk = (times: (number | null)[]): LyricLine[] =>
@@ -67,5 +67,21 @@ describe('fillMissingTimes', () => {
     const src = mk([null, 4]);
     fillMissingTimes(src);
     expect(src[0]!.time).toBeNull();
+  });
+});
+
+describe('previousTimedIndex / nextTimedIndex', () => {
+  const lines = mk([10, null, 20, 30, null]);
+
+  it('finds the closest timed line before or after, skipping untimed ones', () => {
+    expect(previousTimedIndex(lines, 2)).toBe(0);
+    expect(previousTimedIndex(lines, 0)).toBe(-1);
+    expect(nextTimedIndex(lines, 0)).toBe(2);
+    expect(nextTimedIndex(lines, 3)).toBe(-1);
+  });
+
+  it('works from before the first line', () => {
+    expect(nextTimedIndex(lines, -1)).toBe(0);
+    expect(previousTimedIndex(lines, -1)).toBe(-1);
   });
 });

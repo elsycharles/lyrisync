@@ -5,9 +5,9 @@ import { useI18n } from '../i18n/useI18n';
 import { parseLrc } from '../lib/lrc';
 import { formatDecimal, parseDecimal } from '../lib/number';
 import { formatTimestamp, roundCs } from '../lib/time';
-import { activeLineIndex, nudgeLine, shiftLines } from '../lib/timing';
+import { activeLineIndex, nudgeLine, previousTimedIndex, shiftLines } from '../lib/timing';
 import { FileIcon, UndoIcon } from './icons';
-import { LineTools, PLAY_LEAD_IN } from './LineTools';
+import { LineTools, playLine } from './LineTools';
 import { Shortcuts } from './Shortcuts';
 import type { LrcMetadata, LyricLine } from '../lib/types';
 
@@ -63,11 +63,16 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
     [lines, onEdit],
   );
 
-  const playFrom = (line: LyricLine) => {
-    if (line.time === null) return;
-    ctrl.seek(Math.max(0, line.time - PLAY_LEAD_IN));
-    void ctrl.play();
+  const playFrom = (line: LyricLine) => playLine(ctrl, line);
+
+  const goPrevious = (id: string) => {
+    const line = lines[previousTimedIndex(lines, lines.findIndex((l) => l.id === id))];
+    if (!line) return;
+    setSelectedId(line.id);
+    playLine(ctrl, line);
   };
+  const goPreviousRef = useRef(goPrevious);
+  goPreviousRef.current = goPrevious;
 
   const setAndNext = (id: string) => {
     const index = lines.findIndex((l) => l.id === id);
@@ -97,6 +102,11 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) return;
+      if (e.key === 'Backspace' && selectedId) {
+        e.preventDefault();
+        goPreviousRef.current(selectedId);
+        return;
+      }
       if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (!selectedId) return;
         e.preventDefault();
@@ -200,6 +210,7 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
                   onNudge={(d) => nudge(line.id, d)}
                   onSetNext={() => setAndNext(line.id)}
                   onPlay={() => playFrom(line)}
+                  onPrevious={() => goPrevious(line.id)}
                   onClear={() => setTime(line.id, null)}
                 />
               )}
@@ -253,6 +264,8 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
         items={[
           { keys: ['↑', '↓'], label: t.result.shortcuts.pick },
           { keys: ['←', '→'], label: t.result.shortcuts.nudge },
+          { keys: ['C'], label: t.result.shortcuts.setHere },
+          { keys: ['⌫'], label: t.result.shortcuts.previous },
           { keys: [t.result.keys.space], label: t.result.shortcuts.playPause },
         ]}
       />

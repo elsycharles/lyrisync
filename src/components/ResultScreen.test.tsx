@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useReducer } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -115,7 +115,8 @@ function Editable({ ctrl }: { ctrl: AudioController }) {
   );
 }
 
-const lineButton = (text: string) => screen.getByText(text).closest('button')!;
+const lineButton = (text: string) =>
+  within(screen.getByRole('list', { name: 'Synced lines' })).getByText(text).closest('button')!;
 
 describe('fixing lines on the result screen', () => {
   it('selects a line on click and nudges it with its tools', async () => {
@@ -162,5 +163,31 @@ describe('fixing lines on the result screen', () => {
     expect(latest[1]!.time).toBe(13.25);
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(latest[1]!.time).toBe(14.25);
+  });
+});
+
+describe('going back a line', () => {
+  it('takes the selection and the music back to the previous line', async () => {
+    const ctrl = new FakeAudio();
+    render(<Editable ctrl={ctrl} />);
+    await userEvent.click(lineButton('You already know how it ends'));
+    await userEvent.click(screen.getByRole('button', { name: 'Previous' }));
+    expect(lineButton('The harbour falls asleep behind us')).toHaveAttribute('aria-pressed', 'true');
+    expect(ctrl.now).toBeCloseTo(13.75);
+    expect(ctrl.playing).toBe(true);
+    // Backspace does the same, and the untimed line is never a target.
+    fireEvent.keyDown(document.body, { key: 'Backspace' });
+    expect(lineButton('Stay a little longer')).toHaveAttribute('aria-pressed', 'true');
+    expect(ctrl.now).toBeCloseTo(9.3);
+  });
+
+  it('steps through lines with the stage transport, even right after a jump', async () => {
+    const ctrl = new FakeAudio();
+    render(<Editable ctrl={ctrl} />);
+    ctrl.now = 16; // in "The harbour…"
+    await userEvent.click(screen.getByRole('button', { name: 'Previous line' }));
+    expect(ctrl.now).toBeCloseTo(9.3); // "Stay a little longer", minus the lead-in
+    await userEvent.click(screen.getByRole('button', { name: 'Next line' }));
+    expect(ctrl.now).toBeCloseTo(13.75); // the very next line, not one further
   });
 });

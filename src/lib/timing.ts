@@ -81,3 +81,15 @@ export function fillMissingTimes(lines: LyricLine[], duration?: number): LyricLi
   }
   return result;
 }
+
+/** Index of the closest line before `from` that has a time, or -1. */
+export function previousTimedIndex(lines: readonly LyricLine[], from: number): number {
+  for (let i = Math.min(from, lines.length) - 1; i >= 0; i--) if (lines[i]!.time !== null) return i;
+  return -1;
+}
+
+/** Index of the closest line after `from` that has a time, or -1. */
+export function nextTimedIndex(lines: readonly LyricLine[], from: number): number {
+  for (let i = Math.max(-1, from) + 1; i < lines.length; i++) if (lines[i]!.time !== null) return i;
+  return -1;
+}

@@ -4,9 +4,9 @@ import { usePlaybackSelector, usePlaying } from '../audio/usePlayback';
 import { useI18n } from '../i18n/useI18n';
 import { RELIABLE } from '../lib/confidence';
 import { formatTimestamp, roundCs } from '../lib/time';
-import { activeLineIndex, nudgeLine } from '../lib/timing';
+import { activeLineIndex, nudgeLine, previousTimedIndex } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
-import { LineTools, PLAY_LEAD_IN } from './LineTools';
+import { LineTools, currentLineIndex, playLine } from './LineTools';
 
 /** An automatically placed line whose timing is less certain than the rest. */
 export function isToCheck(line: LyricLine): boolean {
@@ -19,6 +19,9 @@ interface Props {
   /** Enables in-place fixing: select a line, nudge it, set it to the playhead. */
   onEdit?: (lines: LyricLine[]) => void;
   onUndo?: () => void;
+  /** Controlled selection (the result screen's transport moves it too). */
+  selectedId?: string | null;
+  onSelect?: (id: string | null) => void;
 }
 
 function isTyping(target: EventTarget | null): boolean {
@@ -32,24 +35,29 @@ function isTyping(target: EventTarget | null): boolean {
  * Keyboard: ↑/↓ select, ←/→ ±0.1 s (Shift ±1 s), Enter play, C set to the playhead,
  * Ctrl/Cmd+Z undo, Escape deselect.
  */
-export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
+export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledId, onSelect }: Props) {
   const { t } = useI18n();
   const select = useCallback((time: number) => activeLineIndex(lines, time), [lines]);
   const active = usePlaybackSelector(ctrl, select);
   const playing = usePlaying(ctrl);
   const listRef = useRef<HTMLOListElement>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [ownId, setOwnId] = useState<string | null>(null);
+  const selectedId = controlledId !== undefined ? controlledId : ownId;
+  const setSelectedId = onSelect ?? setOwnId;
   const editable = !!onEdit;
   const selected = lines.find((l) => l.id === selectedId) ?? null;
 
-  const playFrom = useCallback(
-    (line: LyricLine) => {
-      if (line.time === null) return;
-      ctrl.seek(Math.max(0, line.time - PLAY_LEAD_IN));
-      void ctrl.play();
-    },
-    [ctrl],
-  );
+  const playFrom = useCallback((line: LyricLine) => playLine(ctrl, line), [ctrl]);
+
+  /** Back one line, the music with it: from the selected line, or the one being sung. */
+  const goPrevious = useCallback(() => {
+    const from = selectedId ? lines.findIndex((l) => l.id === selectedId) : currentLineIndex(lines, ctrl);
+    const index = previousTimedIndex(lines, from);
+    const line = lines[index];
+    if (!line) return;
+    setSelectedId(line.id);
+    playLine(ctrl, line);
+  }, [ctrl, lines, selectedId, setSelectedId]);
 
   const nudge = useCallback((id: string, delta: number) => onEdit?.(nudgeLine(lines, id, delta)), [lines, onEdit]);
 
@@ -62,7 +70,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
       const next = lines[index + 1];
       setSelectedId(next ? next.id : null);
     },
-    [ctrl, lines, onEdit],
+    [ctrl, lines, onEdit, setSelectedId],
   );
 
   // Follow the sung line while playing, unless the user is busy with a line of their own.
@@ -117,6 +125,10 @@ export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
           e.preventDefault();
           setAndNext(selected.id);
           return;
+        case 'Backspace':
+          e.preventDefault();
+          goPrevious();
+          return;
         case 'Escape':
           setSelectedId(null);
           return;
@@ -124,7 +136,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [active, editable, lines, nudge, onUndo, playFrom, selected, selectedId, setAndNext]);
+  }, [active, editable, goPrevious, lines, nudge, onUndo, playFrom, selected, selectedId, setAndNext, setSelectedId]);
 
   return (
     <ol className="lines lines--scroll" ref={listRef} aria-label={t.result.linesLabel}>
@@ -178,6 +190,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo }: Props) {
                 onNudge={(d) => nudge(line.id, d)}
                 onSetNext={() => setAndNext(line.id)}
                 onPlay={() => playFrom(line)}
+                onPrevious={goPrevious}
               />
             )}
           </li>

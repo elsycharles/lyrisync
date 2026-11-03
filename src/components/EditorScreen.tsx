@@ -2,7 +2,9 @@ import { useId, useState, type KeyboardEvent } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { useI18n } from '../i18n/useI18n';
 import type { LrcMetadata, LyricLine } from '../lib/types';
+import { nextTimedIndex, previousTimedIndex } from '../lib/timing';
 import { AdjustPanel } from './AdjustPanel';
+import { currentLineIndex, playLine } from './LineTools';
 import { Player } from './Player';
 import { TapPanel } from './TapPanel';
 
@@ -23,6 +25,14 @@ export function EditorScreen(props: Props) {
   // Start in tap mode while lines still need timing, otherwise go straight to fine tuning.
   const [mode, setMode] = useState<Mode>(() => (props.lines.some((l) => l.time === null) ? 'tap' : 'adjust'));
   const baseId = useId();
+
+  // ⏮ / ⏭ on the player: the music to the previous / next timed line.
+  const jump = (direction: -1 | 1) => {
+    const from = currentLineIndex(props.lines, props.ctrl);
+    const index = direction < 0 ? previousTimedIndex(props.lines, from) : nextTimedIndex(props.lines, from);
+    const line = props.lines[index];
+    if (line) playLine(props.ctrl, line);
+  };
 
   const onTabKey = (e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -60,7 +70,12 @@ export function EditorScreen(props: Props) {
 
       {/* Stays in view while the line list scrolls. */}
       <div className="sticky-player">
-        <Player ctrl={props.ctrl} variant="clock" />
+        <Player
+          ctrl={props.ctrl}
+          variant="clock"
+          onPrevLine={() => jump(-1)}
+          onNextLine={() => jump(1)}
+        />
       </div>
 
       <div id={`${baseId}-panel`} role="tabpanel" aria-labelledby={`${baseId}-${mode}`}>
