@@ -2097,12 +2097,6 @@ button.line--active:not(:disabled):hover {
   border-radius: 6px;
 }
 
-.line--playing time {
-  background: var(--mint);
-  color: var(--ls-charcoal);
-  font-weight: 700;
-}
-
 .line-tools {
   display: flex;
   align-items: center;
@@ -2352,4 +2346,30 @@ button.line--selected:not(:disabled):hover {
 .tool-btn--main:not(:disabled):hover {
   background: #5b3be0;
   border-color: transparent;
+}
+
+/*
+ * The line being played is always green — selected, ticked or not. Mint marks the
+ * reading position; the selection stays visible through the tools open under the line.
+ * Kept last, with a doubled class, so it wins over .line--selected and .line--check.
+ */
+.line.line--active,
+.line.line--playing,
+button.line.line--active:not(:disabled):hover,
+button.line.line--playing:not(:disabled):hover,
+.line.line--playing.line--selected {
+  background: var(--mint-tint);
+  border-color: var(--mint);
+  border-style: solid;
+  color: var(--ink);
+}
+
+.line.line--playing {
+  font-weight: 600;
+}
+
+.line--active time,
+.line--playing time {
+  color: var(--ink);
+  font-weight: 700;
 }
