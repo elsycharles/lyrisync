@@ -14,17 +14,17 @@ test('open pasted .lrc, nudge and batch-shift, then export', async ({ page }) =>
   await expect(page.getByRole('tab', { name: 'Adjust' })).toHaveAttribute('aria-selected', 'true');
 
   await page.getByRole('button', { name: /Select the line “Stay a little longer”/ }).click();
-  await page.getByRole('button', { name: 'Shift by + 0.1 s' }).click();
+  await page.getByRole('button', { name: 'Shift by +0.1 s' }).click();
   await page.keyboard.press('Shift+ArrowRight');
   await expect(page.locator('.lines time').first()).toHaveText('00:10.90');
 
   await page.getByRole('checkbox', { name: /The harbour/ }).check();
   await page.getByRole('checkbox', { name: /You already know/ }).check();
   await expect(page.getByText('2 lines ticked')).toBeVisible();
-  await page.getByRole('button', { name: 'Shift by − 0.2 s' }).click();
+  await page.getByRole('button', { name: 'Shift by −0.2 s' }).click();
 
   await page.getByRole('button', { name: 'Undo' }).click();
-  await page.getByRole('button', { name: 'Shift by − 0.2 s' }).click();
+  await page.getByRole('button', { name: 'Shift by −0.2 s' }).click();
   await page.getByRole('button', { name: 'Done' }).click();
 
   const [download] = await Promise.all([

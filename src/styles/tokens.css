@@ -33,6 +33,8 @@
   --error-line: #c62217;
   --error-text: #c62217;
   --shadow: 0 1px 2px rgba(31, 36, 48, 0.06), 0 6px 20px rgba(31, 36, 48, 0.06);
+  /* Chevron for selects and collapsible sections, in the secondary text colour. */
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.25 6 7.75l3.5-3.5' fill='none' stroke='%235F6673' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   --font-display: 'Sora', 'Trebuchet MS', sans-serif;
   --font-body: 'Inter', -apple-system, 'Segoe UI', sans-serif;
@@ -65,6 +67,7 @@
     --error-line: #ff8a80;
     --error-text: #ff8a80;
     --shadow: none;
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.25 6 7.75l3.5-3.5' fill='none' stroke='%23A7B0BF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 }
 
@@ -86,4 +89,5 @@
   --error-line: #ff8a80;
   --error-text: #ff8a80;
   --shadow: none;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.25 6 7.75l3.5-3.5' fill='none' stroke='%23A7B0BF' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }

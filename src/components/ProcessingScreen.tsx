@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n/useI18n';
-import { formatBytes } from '../lib/audio';
+import { formatBytes } from '../lib/number';
 import type { PipelinePhase, PipelineState } from '../state/useSyncPipeline';
 
 const ORDER: PipelinePhase[] = ['decoding', 'loading', 'transcribing', 'aligning', 'done'];
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   if (state.phase === 'error' && state.error) {
     return (
@@ -64,7 +64,7 @@ export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }:
           label={t.processing.stepModel}
           detail={
             download && download.total > 0
-              ? t.processing.downloaded(formatBytes(download.loaded), formatBytes(download.total))
+              ? t.processing.downloaded(formatBytes(download.loaded, lang), formatBytes(download.total, lang))
               : status('loading') === 'done' && !download
                 ? t.processing.fromCache
                 : undefined
