@@ -6,9 +6,11 @@ import { parseLrc } from '../lib/lrc';
 import { formatDecimal, parseDecimal } from '../lib/number';
 import { formatTimestamp, roundCs } from '../lib/time';
 import { activeLineIndex, nudgeLine, shiftLines } from '../lib/timing';
+import { FileIcon, UndoIcon } from './icons';
+import { LineTools, PLAY_LEAD_IN } from './LineTools';
+import { Shortcuts } from './Shortcuts';
 import type { LrcMetadata, LyricLine } from '../lib/types';
 
-const NUDGES = [-1, -0.1, 0.1, 1];
 
 interface Props {
   lines: LyricLine[];
@@ -60,6 +62,12 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
     },
     [lines, onEdit],
   );
+
+  const playFrom = (line: LyricLine) => {
+    if (line.time === null) return;
+    ctrl.seek(Math.max(0, line.time - PLAY_LEAD_IN));
+    void ctrl.play();
+  };
 
   const setTime = (id: string, time: number | null) =>
     onEdit(lines.map((l) => (l.id === id ? { ...l, time: time === null ? null : roundCs(time), source: time === null ? null : 'manual' } : l)));
@@ -157,6 +165,10 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
                   type="button"
                   className="line__select"
                   onClick={() => setSelectedId(isSelected ? null : line.id)}
+                  onDoubleClick={() => {
+                    setSelectedId(line.id);
+                    playFrom(line);
+                  }}
                   aria-pressed={isSelected}
                   aria-label={t.editor.selectLine(line.text)}
                 >
@@ -167,38 +179,13 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
                 </button>
               </div>
               {isSelected && (
-                <div className="nudge" role="group" aria-label={t.editor.selected}>
-                  {NUDGES.map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => nudge(line.id, d)}
-                      disabled={line.time === null}
-                      aria-label={t.editor.nudge(t.editor.seconds(d))}
-                    >
-                      {t.editor.seconds(d)}
-                    </button>
-                  ))}
-                  <button type="button" onClick={() => setTime(line.id, ctrl.currentTime())} title={t.editor.setHereHint}>
-                    {t.editor.setHere}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (line.time === null) return;
-                      ctrl.seek(Math.max(0, line.time - 0.5));
-                      void ctrl.play();
-                    }}
-                    disabled={line.time === null}
-                    aria-label={t.editor.playFrom}
-                    title={t.editor.playFrom}
-                  >
-                    ▶
-                  </button>
-                  <button type="button" onClick={() => setTime(line.id, null)} disabled={line.time === null}>
-                    {t.editor.clear}
-                  </button>
-                </div>
+                <LineTools
+                  line={line}
+                  onNudge={(d) => nudge(line.id, d)}
+                  onSetHere={() => setTime(line.id, ctrl.currentTime())}
+                  onPlay={() => playFrom(line)}
+                  onClear={() => setTime(line.id, null)}
+                />
               )}
             </li>
           );
@@ -207,7 +194,12 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
 
       {liveTicked.size > 0 && (
         <div className="batchbar">
-          <span className="count">{t.editor.ticked(liveTicked.size)}</span>
+          <span className="count">
+            {t.editor.ticked(liveTicked.size)}
+            <button type="button" className="btn-link batchbar__clear" onClick={() => setTicked(new Set())}>
+              {t.editor.untickAll}
+            </button>
+          </span>
           <span className="batchbar__actions">
             <label className="visually-hidden" htmlFor={shiftId}>
               {t.editor.shiftBy}
@@ -241,16 +233,23 @@ export function AdjustPanel({ lines, ctrl, canUndo, onEdit, onUndo, onImport, on
           {t.editor.importEmpty}
         </p>
       )}
-      <p className="hint hint--keyboard">{t.editor.keyboardHint}</p>
+      <Shortcuts
+        items={[
+          { keys: ['↑', '↓'], label: t.result.shortcuts.pick },
+          { keys: ['←', '→'], label: t.result.shortcuts.nudge },
+          { keys: [t.result.keys.space], label: t.result.shortcuts.playPause },
+        ]}
+      />
 
-      <div className="toolbar">
-        <button type="button" className="btn btn--ghost" onClick={() => fileRef.current?.click()}>
-          {t.editor.importLrc}
+      <div className="editor-actions">
+        <button type="button" className="btn btn--ghost btn--small" onClick={() => fileRef.current?.click()}>
+          <FileIcon size={14} /> {t.editor.importLrc}
         </button>
+        <span className="editor-actions__spacer" />
         <button type="button" className="btn btn--ghost" onClick={onUndo} disabled={!canUndo} title={t.editor.undoLast}>
-          {t.editor.undo}
+          <UndoIcon size={14} /> {t.editor.undo}
         </button>
-        <button type="button" className="btn btn--ghost" onClick={onDone}>
+        <button type="button" className="btn btn--primary" onClick={onDone}>
           {t.editor.done}
         </button>
         <input

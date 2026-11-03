@@ -51,12 +51,12 @@ export function Player({ ctrl, title, subtitle, variant = 'track' }: Props) {
         >
           {playing ? (
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-              <rect x="2.5" y="2" width="2.8" height="8" rx="1" fill="#FFFFFF" />
-              <rect x="6.7" y="2" width="2.8" height="8" rx="1" fill="#FFFFFF" />
+              <rect x="2.5" y="2" width="2.8" height="8" rx="1" fill="currentColor" />
+              <rect x="6.7" y="2" width="2.8" height="8" rx="1" fill="currentColor" />
             </svg>
           ) : (
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-              <path d="M3 1.8l7 4.2-7 4.2z" fill="#FFFFFF" />
+              <path d="M3 1.8l7 4.2-7 4.2z" fill="currentColor" />
             </svg>
           )}
         </button>

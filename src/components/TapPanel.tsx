@@ -4,6 +4,7 @@ import { usePlaying } from '../audio/usePlayback';
 import { useI18n } from '../i18n/useI18n';
 import { roundCs, formatTimestamp } from '../lib/time';
 import type { LyricLine } from '../lib/types';
+import { UndoIcon } from './icons';
 
 interface Props {
   lines: LyricLine[];
@@ -207,14 +208,15 @@ export function TapPanel({ lines, ctrl, onEdit, onUndo, onDone }: Props) {
         })}
       </ol>
 
-      <div className="toolbar">
+      <div className="editor-actions">
         <button type="button" className="btn btn--ghost" onClick={() => ctrl.skip(-3)}>
-          {t.editor.back3}
+          <UndoIcon size={14} /> {t.editor.back3}
         </button>
         <button type="button" className="btn btn--ghost" onClick={() => jumpTo(0)}>
           {t.editor.restartFromTop}
         </button>
-        <button type="button" className="btn btn--ghost" onClick={onDone}>
+        <span className="editor-actions__spacer" />
+        <button type="button" className="btn btn--primary" onClick={onDone}>
           {t.editor.done}
         </button>
       </div>
