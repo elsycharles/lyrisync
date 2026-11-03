@@ -147,6 +147,12 @@ export const fr = {
     keyboardHint: 'Clavier : ↑ ↓ pour choisir une ligne, ← → pour ±0,1 s (Maj : ±1 s).',
     seconds: (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''} ${Math.abs(n).toLocaleString('fr-FR')} s`,
   },
+  pwa: {
+    offlineReady: 'LyriSync est prêt à fonctionner hors ligne.',
+    updateAvailable: 'Une nouvelle version est disponible. Exportez votre travail avant de recharger.',
+    reload: 'Recharger',
+    dismiss: 'Plus tard',
+  },
 };
 
 export type Messages = typeof fr;
@@ -294,6 +300,12 @@ export const en: Messages = {
     needsTiming: 'needs timing',
     keyboardHint: 'Keyboard: ↑ ↓ to pick a line, ← → for ±0.1 s (Shift: ±1 s).',
     seconds: (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''} ${Math.abs(n).toLocaleString('en-US')} s`,
+  },
+  pwa: {
+    offlineReady: 'LyriSync is ready to work offline.',
+    updateAvailable: 'A new version is available. Export your work before reloading.',
+    reload: 'Reload',
+    dismiss: 'Later',
   },
 };
 

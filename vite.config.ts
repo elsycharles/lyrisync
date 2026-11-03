@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -10,6 +10,24 @@ const isolationHeaders = {
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Cross-Origin-Embedder-Policy': 'require-corp',
 };
+
+/**
+ * onnxruntime-web references its 27 MB WASM binary with `new URL(..., import.meta.url)`
+ * as a fallback, so Vite copies it into dist. transformers.js always points ONNX Runtime
+ * at jsDelivr instead (cached by the service worker), so the local copy is never fetched,
+ * and it exceeds Cloudflare Pages' 25 MiB per-file limit. Drop it from the output.
+ */
+function dropUnusedOrtWasm(): Plugin {
+  return {
+    name: 'lyrisync:drop-unused-ort-wasm',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      for (const file of Object.keys(bundle)) {
+        if (/ort-wasm.*\.wasm$/.test(file)) delete bundle[file];
+      }
+    },
+  };
+}
 
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
   version: string;
@@ -21,8 +39,10 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    dropUnusedOrtWasm(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt', not 'autoUpdate': a silent reload in the middle of an edit would lose the work.
+      registerType: 'prompt',
       injectRegister: false,
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
@@ -64,6 +84,7 @@ export default defineConfig({
   ],
   worker: {
     format: 'es',
+    plugins: () => [dropUnusedOrtWasm()],
   },
   optimizeDeps: {
     exclude: ['@huggingface/transformers'],

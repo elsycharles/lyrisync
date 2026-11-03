@@ -5,6 +5,7 @@ import { ImportScreen } from './components/ImportScreen';
 import { ProcessingScreen } from './components/ProcessingScreen';
 import { ResultScreen } from './components/ResultScreen';
 import { TopBar } from './components/TopBar';
+import { UpdatePrompt } from './components/UpdatePrompt';
 import { useDevice } from './hooks/useDevice';
 import { useI18n } from './i18n/useI18n';
 import { downloadText, safeFileName } from './lib/download';
@@ -157,6 +158,7 @@ export function App() {
         )}
       </main>
       <footer className="footer">{t.app.footer}</footer>
+      <UpdatePrompt />
       {project.audio && (
         <audio
           ref={ctrl.attach}
