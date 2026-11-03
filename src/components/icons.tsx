@@ -164,3 +164,21 @@ export function FileIcon({ size = 16, className }: IconProps) {
     </svg>
   );
 }
+
+export function PrevLineIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M3.5 3v10" />
+      <path d="M12.5 3.4v9.2L5.8 8Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function NextLineIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M12.5 3v10" />
+      <path d="M3.5 3.4v9.2L10.2 8Z" fill="currentColor" />
+    </svg>
+  );
+}

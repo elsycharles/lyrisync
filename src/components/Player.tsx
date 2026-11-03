@@ -3,6 +3,7 @@ import type { AudioController } from '../audio/AudioController';
 import { useClockRef, useDuration, usePlaying, useRate } from '../audio/usePlayback';
 import { useI18n } from '../i18n/useI18n';
 import { formatDuration } from '../lib/time';
+import { NextLineIcon, PrevLineIcon } from './icons';
 
 const RATES = [1, 0.75, 0.5];
 
@@ -10,11 +11,14 @@ interface Props {
   ctrl: AudioController;
   title?: string;
   subtitle?: string;
+  /** When given, ⏮ / ⏭ buttons around play/pause take the music to the previous / next line. */
+  onPrevLine?: () => void;
+  onNextLine?: () => void;
   /** 'track' shows the title and m:ss times; 'clock' shows a precise clock and a speed control. */
   variant?: 'track' | 'clock';
 }
 
-export function Player({ ctrl, title, subtitle, variant = 'track' }: Props) {
+export function Player({ ctrl, title, subtitle, variant = 'track', onPrevLine, onNextLine }: Props) {
   const { t } = useI18n();
   const playing = usePlaying(ctrl);
   const duration = useDuration(ctrl);
@@ -42,6 +46,11 @@ export function Player({ ctrl, title, subtitle, variant = 'track' }: Props) {
   return (
     <div className="player">
       <div className="player__top">
+        {onPrevLine && (
+          <button type="button" className="transport" onClick={onPrevLine} aria-label={t.player.prevLine} title={t.player.prevLine}>
+            <PrevLineIcon />
+          </button>
+        )}
         <button
           type="button"
           className="play"
@@ -60,6 +69,11 @@ export function Player({ ctrl, title, subtitle, variant = 'track' }: Props) {
             </svg>
           )}
         </button>
+        {onNextLine && (
+          <button type="button" className="transport" onClick={onNextLine} aria-label={t.player.nextLine} title={t.player.nextLine}>
+            <NextLineIcon />
+          </button>
+        )}
         {variant === 'clock' ? (
           <>
             <span className="clock" ref={clockRef} aria-label={t.player.position} />

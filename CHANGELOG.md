@@ -32,6 +32,9 @@ All notable changes to this project are documented here. The format follows
   - "Set & next" (button or C key) sets the selected line to the playback position and
     moves to the next line, so lines can be timed one after the other while the music
     plays, on the result screen and in Adjust;
+  - going back a line takes the music with it: ⏮ / ⏭ around play/pause (result
+    stage and editor player), a "Previous" line tool and the Backspace key, with the
+    selection following on the result screen;
   - Adjust: grouped nudge control around the line's time, the playing line marked by
     a mint time pill, a batch bar that follows the list, "Done" as the main action;
   - checked for overflow from 320 px to 1440 px wide; keyboard tips are hidden on

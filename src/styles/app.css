@@ -2373,3 +2373,38 @@ button.line.line--playing:not(:disabled):hover,
   color: var(--ink);
   font-weight: 700;
 }
+
+/* ⏮ / ⏭ around play/pause: previous / next line, the music with it. */
+.transport {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.transport:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stage-card .transport {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: #fff;
+}
+
+.stage-card .transport:hover {
+  border-color: #9b82ff;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stage-card .transport:focus-visible {
+  outline-color: #9b82ff;
+}

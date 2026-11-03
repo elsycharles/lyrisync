@@ -1,12 +1,13 @@
-import { useCallback, useId } from 'react';
+import { useCallback, useId, useState } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { useSpaceToggle } from '../hooks/useSpaceToggle';
 import { useI18n } from '../i18n/useI18n';
-import { countUntimed } from '../lib/timing';
+import { countUntimed, nextTimedIndex, previousTimedIndex } from '../lib/timing';
 import type { LrcMetadata, LyricLine } from '../lib/types';
 import { ConfidenceChip } from './ConfidenceChip';
 import { DownloadIcon, SlidersIcon, UndoIcon } from './icons';
 import { LyricList, isToCheck } from './LyricList';
+import { currentLineIndex, playLine } from './LineTools';
 import { LyricsStage } from './LyricsStage';
 import { Player } from './Player';
 import { modKey, Shortcuts } from './Shortcuts';
@@ -37,6 +38,17 @@ export function ResultScreen(props: Props) {
 
   useSpaceToggle(useCallback(() => ctrl.toggle(), [ctrl]));
 
+  // Selection lives here so the stage's ⏮ / ⏭ can move it along with the music.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const goLine = (direction: -1 | 1) => {
+    const from = selectedId ? lines.findIndex((l) => l.id === selectedId) : currentLineIndex(lines, ctrl);
+    const index = direction < 0 ? previousTimedIndex(lines, from) : nextTimedIndex(lines, from);
+    const line = lines[index];
+    if (!line) return;
+    if (selectedId) setSelectedId(line.id);
+    playLine(ctrl, line);
+  };
+
   return (
     <div className="result">
       <div className="result__side">
@@ -49,7 +61,7 @@ export function ResultScreen(props: Props) {
             {metadata.artist && <span className="stage-card__artist">{metadata.artist}</span>}
           </div>
           <LyricsStage lines={lines} ctrl={ctrl} />
-          <Player ctrl={ctrl} />
+          <Player ctrl={ctrl} onPrevLine={() => goLine(-1)} onNextLine={() => goLine(1)} />
         </section>
 
         <section className="card result__summary">
@@ -151,10 +163,18 @@ export function ResultScreen(props: Props) {
             { keys: ['←', '→'], label: t.result.shortcuts.nudge },
             { keys: [t.result.keys.enter], label: t.result.shortcuts.listen },
             { keys: ['C'], label: t.result.shortcuts.setHere },
+            { keys: ['⌫'], label: t.result.shortcuts.previous },
             { keys: [modKey(t.result.keys.ctrl), 'Z'], label: t.result.shortcuts.undo },
           ]}
         />
-        <LyricList lines={lines} ctrl={ctrl} onEdit={props.onEdit} onUndo={props.onUndo} />
+        <LyricList
+          lines={lines}
+          ctrl={ctrl}
+          onEdit={props.onEdit}
+          onUndo={props.onUndo}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
       </section>
     </div>
   );
