@@ -1172,3 +1172,13 @@ button.line--active:not(:disabled):hover {
   font-size: 12.5px;
   color: var(--muted);
 }
+
+/* An automatically placed line that is less certain: a quiet amber marker, not an error. */
+.line--check {
+  border-color: var(--ls-amber-fill);
+  border-style: dotted;
+}
+
+.line .flag--check {
+  color: var(--amber-text);
+}

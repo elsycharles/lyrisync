@@ -2,7 +2,7 @@ import { useI18n } from '../i18n/useI18n';
 import { formatBytes } from '../lib/number';
 import type { PipelinePhase, PipelineState } from '../state/useSyncPipeline';
 
-const ORDER: PipelinePhase[] = ['decoding', 'loading', 'transcribing', 'aligning', 'done'];
+const ORDER: PipelinePhase[] = ['decoding', 'loading', 'separating', 'listening', 'reading', 'aligning', 'done'];
 
 interface Props {
   state: PipelineState;
@@ -51,8 +51,12 @@ export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }:
 
   const download = state.download;
   const downloadRatio = download && download.total > 0 ? download.loaded / download.total : null;
-  const chunks = state.chunks;
-  const chunkRatio = chunks && chunks.total > 0 ? chunks.done / chunks.total : null;
+  const step = state.step;
+  const stepRatio = step && step.total > 0 ? step.done / step.total : null;
+  const stepFor = (phase: PipelinePhase) =>
+    status(phase) === 'active' && step
+      ? { detail: t.processing.chunk(step.done, step.total), ratio: stepRatio }
+      : { detail: undefined, ratio: null };
 
   return (
     <section className="card stack" aria-labelledby="processing-title" aria-busy="true">
@@ -71,12 +75,11 @@ export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }:
           }
           ratio={status('loading') === 'active' ? downloadRatio : null}
         />
-        <Step
-          status={status('transcribing')}
-          label={t.processing.stepTranscribe}
-          detail={chunks ? t.processing.chunk(chunks.done, chunks.total) : undefined}
-          ratio={status('transcribing') === 'active' ? chunkRatio : null}
-        />
+        <Step status={status('separating')} label={t.processing.stepSeparate} {...stepFor('separating')} />
+        <Step status={status('listening')} label={t.processing.stepListen} {...stepFor('listening')} />
+        {state.mode === 'max' && (
+          <Step status={status('reading')} label={t.processing.stepRead} {...stepFor('reading')} />
+        )}
         <Step status={status('aligning')} label={t.processing.stepAlign} />
       </ol>
       {state.device && (

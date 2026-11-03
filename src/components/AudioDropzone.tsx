@@ -1,5 +1,5 @@
 import { useId, useRef, useState, type DragEvent } from 'react';
-import { ACCEPTED_AUDIO } from '../lib/audio';
+import { ACCEPTED_AUDIO } from '../lib/audio/decode';
 import { formatBytes } from '../lib/number';
 import { formatDuration } from '../lib/time';
 import { useI18n } from '../i18n/useI18n';

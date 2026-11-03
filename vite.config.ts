@@ -87,7 +87,7 @@ export default defineConfig({
     plugins: () => [dropUnusedOrtWasm()],
   },
   optimizeDeps: {
-    exclude: ['@huggingface/transformers'],
+    exclude: ['@huggingface/transformers', 'onnxruntime-web'],
   },
   server: { headers: isolationHeaders },
   preview: { headers: isolationHeaders },

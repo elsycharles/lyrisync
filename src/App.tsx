@@ -66,7 +66,7 @@ export function App() {
       audio: project.audio.file,
       lines,
       language: resolveLanguage(settings.language, project.lyricsText, lang).language,
-      model: settings.model,
+      mode: settings.mode,
     });
     if (result) {
       dispatch({ type: 'lines/replace', lines: result.lines, confidence: result.confidence });

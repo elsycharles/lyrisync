@@ -5,9 +5,9 @@ import { safeFileName } from './download';
 describe('confidenceLevel', () => {
   it('stays neutral above the threshold and escalates below', () => {
     expect(confidenceLevel(0.92)).toBe('ok');
-    expect(confidenceLevel(0.75)).toBe('ok');
-    expect(confidenceLevel(0.61)).toBe('warn');
-    expect(confidenceLevel(0.2)).toBe('low');
+    expect(confidenceLevel(0.85)).toBe('ok');
+    expect(confidenceLevel(0.78)).toBe('warn');
+    expect(confidenceLevel(0.61)).toBe('low');
   });
 });
 

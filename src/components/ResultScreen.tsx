@@ -2,7 +2,7 @@ import { useCallback, useId } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { useSpaceToggle } from '../hooks/useSpaceToggle';
 import { useI18n } from '../i18n/useI18n';
-import { confidenceLevel } from '../lib/confidence';
+import { isToCheck } from './LyricList';
 import { countUntimed } from '../lib/timing';
 import type { LrcMetadata, LyricLine } from '../lib/types';
 import { ConfidenceChip } from './ConfidenceChip';
@@ -24,6 +24,7 @@ export function ResultScreen(props: Props) {
   const { t } = useI18n();
   const { lines, confidence, metadata, ctrl } = props;
   const untimed = countUntimed(lines);
+  const toCheck = lines.filter(isToCheck).length;
   const titleId = useId();
   const artistId = useId();
   const albumId = useId();
@@ -46,14 +47,18 @@ export function ResultScreen(props: Props) {
 
       {untimed > 0 && (
         <div className="notice notice--row" role="status">
-          <span>
-            {t.result.untimedNotice(untimed)}
-            {confidence !== null && confidenceLevel(confidence) !== 'ok' && (
-              <span className="notice__detail">{t.result.lowConfidence}</span>
-            )}
-          </span>
+          <span>{t.result.untimedNotice(untimed)}</span>
           <button type="button" className="btn-link" onClick={props.onFixTiming}>
             {t.result.fixNow}
+          </button>
+        </div>
+      )}
+
+      {untimed === 0 && toCheck > 0 && (
+        <div className="notice notice--row" role="status">
+          <span>{t.result.toCheckNotice(toCheck)}</span>
+          <button type="button" className="btn-link" onClick={props.onFixTiming}>
+            {t.result.adjust}
           </button>
         </div>
       )}

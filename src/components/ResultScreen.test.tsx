@@ -7,8 +7,8 @@ import type { LyricLine } from '../lib/types';
 import { ResultScreen } from './ResultScreen';
 
 const lines: LyricLine[] = [
-  { id: 'a', text: 'Stay a little longer', time: 9.8, source: 'auto' },
-  { id: 'b', text: 'The harbour falls asleep behind us', time: 14.25, source: 'auto' },
+  { id: 'a', text: 'Stay a little longer', time: 9.8, source: 'auto', confidence: 0.99 },
+  { id: 'b', text: 'The harbour falls asleep behind us', time: 14.25, source: 'auto', confidence: 0.5 },
   { id: 'c', text: 'You already know how it ends', time: null, source: null },
 ];
 
@@ -33,22 +33,23 @@ function setup(confidence: number | null) {
 }
 
 describe('ResultScreen', () => {
-  it('shows timestamps, flags untimed lines and colours a low confidence', () => {
-    setup(0.61);
+  it('shows timestamps, flags untimed and uncertain lines, and colours a low reliability', () => {
+    setup(0.78);
     expect(screen.getByText('00:09.80')).toBeInTheDocument();
     expect(screen.getByText('needs timing')).toBeInTheDocument();
-    expect(screen.getByText('Confidence 61%')).toHaveClass('chip--warn');
+    expect(screen.getByText('to check')).toBeInTheDocument();
+    expect(screen.getByText('Reliability 78%')).toHaveClass('chip--warn');
     expect(screen.getByRole('status')).toHaveTextContent('1 line has no timing');
   });
 
   it('keeps the badge neutral above the threshold', () => {
     setup(0.92);
-    expect(screen.getByText('Confidence 92%')).toHaveClass('chip--ok');
+    expect(screen.getByText('Reliability 92%')).toHaveClass('chip--ok');
   });
 
   it('hides the badge when there was no automatic pass', () => {
     setup(null);
-    expect(screen.queryByText(/Confidence/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Reliability/)).not.toBeInTheDocument();
   });
 
   it('exports and opens the editor', async () => {

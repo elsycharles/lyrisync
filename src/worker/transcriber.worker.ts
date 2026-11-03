@@ -3,7 +3,8 @@ import * as Comlink from 'comlink';
 import { env, pipeline, type AutomaticSpeechRecognitionPipeline, type ProgressInfo } from '@huggingface/transformers';
 import type { TranscribedWord } from '../lib/align/align';
 import { collapseLoops, hasRepetitionLoop } from '../lib/align/repetition';
-import { WHISPER_SAMPLE_RATE } from '../lib/audio';
+import { MODEL_SAMPLE_RATE as WHISPER_SAMPLE_RATE } from '../lib/audio/decode';
+import { resample } from '../lib/audio/resample';
 import {
   MAX_NEW_TOKENS,
   MODEL_IDS,
@@ -83,6 +84,17 @@ const api = {
       current = { size, device: 'wasm', asr: await createPipeline(size, 'wasm', onProgress) };
     }
     return { device: current.device };
+  },
+
+  /** Same as transcribe, for audio at any rate (resampled to 16 kHz here, off the main thread). */
+  transcribeAt(
+    pcm: Float32Array,
+    sampleRate: number,
+    language: WhisperLanguage,
+    onProgress?: (p: ChunkProgress) => void,
+  ): Promise<TranscribedWord[]> {
+    const at16k = sampleRate === WHISPER_SAMPLE_RATE ? pcm : resample(pcm, sampleRate, WHISPER_SAMPLE_RATE);
+    return api.transcribe(at16k, language, onProgress);
   },
 
   /**
