@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { LyricLine } from '../lib/types';
 import type { Device, WhisperLanguage } from '../worker/models';
 import { isAbortError } from '../worker/transcriber';
+import { applyProgress, initialProgress } from './progress';
 import { cancelSync, runSync, type SyncMode, type SyncProgress, type SyncResult, type SyncStage } from './syncEngine';
 
 export type PipelinePhase = 'idle' | SyncStage | 'done' | 'error';
@@ -14,6 +15,10 @@ export interface PipelineState {
   step: { done: number; total: number } | null;
   device: Device | null;
   error: { kind: PipelineErrorKind; detail: string } | null;
+  /** Overall progress 0–100, never decreasing within a run (see progress.ts). */
+  percent: number;
+  /** Models had to be downloaded during this run. */
+  downloaded: boolean;
 }
 
 export interface PipelineInput {
@@ -23,7 +28,16 @@ export interface PipelineInput {
   mode: SyncMode;
 }
 
-const IDLE: PipelineState = { phase: 'idle', mode: 'max', download: null, step: null, device: null, error: null };
+const IDLE: PipelineState = {
+  phase: 'idle',
+  mode: 'max',
+  download: null,
+  step: null,
+  device: null,
+  error: null,
+  percent: 0,
+  downloaded: false,
+};
 
 /** React state around runSync: progress, cancellation and error reporting. */
 export function useSyncPipeline() {
@@ -33,27 +47,30 @@ export function useSyncPipeline() {
   const run = useCallback(async (input: PipelineInput): Promise<SyncResult | null> => {
     const id = ++runId.current;
     const alive = () => runId.current === id;
-    let stage: SyncStage = 'decoding';
+    let progress = initialProgress(input.mode);
     setState({ ...IDLE, mode: input.mode, phase: 'decoding' });
     try {
       const result = await runSync(input, (p: SyncProgress) => {
         if (!alive()) return;
-        stage = p.stage;
+        progress = applyProgress(progress, p);
+        const snapshot = progress;
         setState((s) => ({
           ...s,
-          phase: p.stage,
-          download: p.download ?? s.download,
-          step: p.step ?? (p.stage === s.phase ? s.step : null),
+          phase: snapshot.stage,
+          download: snapshot.download,
+          step: snapshot.step,
+          percent: snapshot.percent,
+          downloaded: snapshot.downloaded,
           device: p.device ?? s.device,
         }));
       });
       if (!alive()) return null;
-      setState((s) => ({ ...s, phase: 'done' }));
+      setState((s) => ({ ...s, phase: 'done', percent: 100 }));
       return result;
     } catch (err) {
       if (isAbortError(err) || !alive()) return null;
       console.error('[lyrisync] sync failed', err);
-      setState((s) => ({ ...s, phase: 'error', error: { kind: classify(err, stage), detail: String(err) } }));
+      setState((s) => ({ ...s, phase: 'error', error: { kind: classify(err, progress.stage), detail: String(err) } }));
       return null;
     }
   }, []);

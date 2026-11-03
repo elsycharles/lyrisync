@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { formatBytes } from '../lib/number';
 import { formatDuration } from '../lib/time';
+import { stagesFor } from '../state/progress';
 import type { PipelinePhase, PipelineState } from '../state/useSyncPipeline';
 import { ChipIcon } from './icons';
 
@@ -13,22 +14,6 @@ interface Props {
   onRetry: () => void;
   onBack: () => void;
   onManual: () => void;
-}
-
-/** Rough share of the total time each stage takes, so the overall bar moves evenly. */
-function stageWeight(stage: Stage, downloading: boolean): number {
-  switch (stage) {
-    case 'loading':
-      return downloading ? 10 : 1;
-    case 'separating':
-      return 2;
-    case 'listening':
-      return 3;
-    case 'reading':
-      return 6;
-    default:
-      return 1;
-  }
 }
 
 export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }: Props) {
@@ -71,7 +56,7 @@ export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }:
     );
   }
 
-  const stages: Stage[] = ['decoding', 'loading', 'separating', 'listening', ...(state.mode === 'max' ? (['reading'] as const) : []), 'aligning'];
+  const stages = stagesFor(state.mode) as Stage[];
   const labels: Record<Stage, string> = {
     decoding: t.processing.stepDecode,
     loading: t.processing.stepModel,
@@ -83,14 +68,9 @@ export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }:
   const currentIndex = Math.max(0, stages.indexOf(state.phase as Stage));
   const current = stages[currentIndex]!;
   const download = state.download;
-  const downloading = !!download && download.total > 0 && download.loaded < download.total;
-  const stepRatio = state.step && state.step.total > 0 ? state.step.done / state.step.total : 0;
-  const currentRatio = current === 'loading' ? (download && download.total > 0 ? download.loaded / download.total : 0) : stepRatio;
-
-  const weights = stages.map((s) => stageWeight(s, s === 'loading' && downloading));
-  const total = weights.reduce((a, b) => a + b, 0);
-  const done = weights.slice(0, currentIndex).reduce((a, b) => a + b, 0) + weights[currentIndex]! * currentRatio;
-  const pct = state.phase === 'done' ? 100 : Math.min(99, Math.round((done / total) * 100));
+  // Monotonic by construction (state/progress.ts): the bar never goes backwards.
+  const pct = state.percent;
+  const downloading = state.downloaded && current === 'loading';
 
   const detailFor = (stage: Stage, status: 'done' | 'active' | 'pending'): string | undefined => {
     if (stage === 'loading') {
