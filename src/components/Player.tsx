@@ -3,17 +3,21 @@ import type { AudioController } from '../audio/AudioController';
 import { useClockRef, useDuration, usePlaying, useRate } from '../audio/usePlayback';
 import { useI18n } from '../i18n/useI18n';
 import { formatDuration } from '../lib/time';
+import { NextLineIcon, PrevLineIcon } from './icons';
 
 const RATES = [1, 0.75, 0.5];
 
 interface Props {
   ctrl: AudioController;
   title?: string;
-  /** 'track' shows the title and m:ss times; 'clock' shows a precise clock and a speed control. */
-  variant?: 'track' | 'clock';
+  subtitle?: string;
+  /** When given, ⏮ / ⏭ buttons around play/pause take the music to the previous / next line. */
+  onPrevLine?: () => void;
+  onNextLine?: () => void;
 }
 
-export function Player({ ctrl, title, variant = 'track' }: Props) {
+/** Play/pause, ⏮ / ⏭, the m:ss position, a speed control (slower helps on fast passages) and the scrubber. */
+export function Player({ ctrl, title, subtitle, onPrevLine, onNextLine }: Props) {
   const { t } = useI18n();
   const playing = usePlaying(ctrl);
   const duration = useDuration(ctrl);
@@ -21,7 +25,7 @@ export function Player({ ctrl, title, variant = 'track' }: Props) {
   const clockRef = useRef<HTMLSpanElement>(null);
   const scrubRef = useRef<HTMLInputElement>(null);
 
-  useClockRef(ctrl, clockRef, variant === 'clock' ? undefined : formatDuration);
+  useClockRef(ctrl, clockRef, formatDuration);
 
   // The scrubber follows the playhead through the DOM, not through React state.
   useEffect(() => {
@@ -41,6 +45,11 @@ export function Player({ ctrl, title, variant = 'track' }: Props) {
   return (
     <div className="player">
       <div className="player__top">
+        {onPrevLine && (
+          <button type="button" className="transport" onClick={onPrevLine} aria-label={t.player.prevLine} title={t.player.prevLine}>
+            <PrevLineIcon />
+          </button>
+        )}
         <button
           type="button"
           className="play"
@@ -50,37 +59,38 @@ export function Player({ ctrl, title, variant = 'track' }: Props) {
         >
           {playing ? (
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-              <rect x="2.5" y="2" width="2.8" height="8" rx="1" fill="#FFFFFF" />
-              <rect x="6.7" y="2" width="2.8" height="8" rx="1" fill="#FFFFFF" />
+              <rect x="2.5" y="2" width="2.8" height="8" rx="1" fill="currentColor" />
+              <rect x="6.7" y="2" width="2.8" height="8" rx="1" fill="currentColor" />
             </svg>
           ) : (
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-              <path d="M3 1.8l7 4.2-7 4.2z" fill="#FFFFFF" />
+              <path d="M3 1.8l7 4.2-7 4.2z" fill="currentColor" />
             </svg>
           )}
         </button>
-        {variant === 'clock' ? (
-          <>
-            <span className="clock" ref={clockRef} aria-label={t.player.position} />
-            <span className="times">{hasDuration ? formatDuration(duration) : ''}</span>
-            <button
-              type="button"
-              className="speed"
-              onClick={() => ctrl.setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length]!)}
-              aria-label={t.player.speed(rate)}
-              title={t.player.speedHint}
-            >
-              {rate}×
-            </button>
-          </>
-        ) : (
-          <>
-            {title && <span className="track-title">{title}</span>}
-            <span className="times">
-              <span ref={clockRef} /> / {hasDuration ? formatDuration(duration) : '–:––'}
-            </span>
-          </>
+        {onNextLine && (
+          <button type="button" className="transport" onClick={onNextLine} aria-label={t.player.nextLine} title={t.player.nextLine}>
+            <NextLineIcon />
+          </button>
         )}
+        {(title || subtitle) && (
+          <span className="track-text">
+            {title && <span className="track-title">{title}</span>}
+            {subtitle && <span className="track-artist">{subtitle}</span>}
+          </span>
+        )}
+        <span className="times">
+          <span ref={clockRef} /> / {hasDuration ? formatDuration(duration) : '–:––'}
+        </span>
+        <button
+          type="button"
+          className="speed"
+          onClick={() => ctrl.setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length]!)}
+          aria-label={t.player.speed(rate)}
+          title={t.player.speedHint}
+        >
+          {rate}×
+        </button>
       </div>
       <input
         ref={scrubRef}

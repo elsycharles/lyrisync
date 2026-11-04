@@ -26,6 +26,8 @@ export type ProjectAction =
   | { type: 'lines/edit'; lines: LyricLine[] }
   | { type: 'lines/undo' }
   | { type: 'metadata/set'; metadata: Partial<LrcMetadata> }
+  /** A project reopened from the history: everything replaced, undo starts afresh. */
+  | { type: 'project/load'; state: Omit<ProjectState, 'history'> }
   | { type: 'reset' };
 
 const HISTORY_LIMIT = 200;
@@ -82,6 +84,8 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
     }
     case 'metadata/set':
       return { ...state, metadata: { ...state.metadata, ...action.metadata } };
+    case 'project/load':
+      return { ...action.state, history: [] };
     case 'reset':
       return { ...initialProject };
   }

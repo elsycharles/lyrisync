@@ -7,8 +7,13 @@ export interface LyricLine {
   /** Start time in seconds, or null when the line still needs timing. */
   time: number | null;
   source: TimingSource | null;
-  /** Alignment confidence for this line, 0–1. Only set by the automatic pass. */
+  /**
+   * Automatic pass only: how likely the timing is right (within half a second), 0–1.
+   * Lines below RELIABLE are shown as "to check".
+   */
   confidence?: number;
+  /** Placed between its neighbours because nothing in it could be aligned. */
+  estimated?: boolean;
 }
 
 export interface LrcMetadata {

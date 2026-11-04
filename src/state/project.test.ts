@@ -25,6 +25,16 @@ describe('projectReducer', () => {
     expect(projectReducer(s, { type: 'audio/duration', duration: 228 }).metadata.length).toBe(228);
   });
 
+  it('loads a project from the history with a fresh undo', () => {
+    let s = projectReducer(initialProject, { type: 'lines/edit', lines: lines(1) });
+    expect(s.history).toHaveLength(1);
+    s = projectReducer(s, {
+      type: 'project/load',
+      state: { lyricsText: 'a', audio: null, lines: lines(5), confidence: null, metadata: { title: 'Back' } },
+    });
+    expect(s).toMatchObject({ lyricsText: 'a', lines: lines(5), history: [], metadata: { title: 'Back' } });
+  });
+
   it('cleans file names', () => {
     expect(titleFromFileName('stay_a__little-longer.final.wav')).toBe('stay a little longer.final');
   });

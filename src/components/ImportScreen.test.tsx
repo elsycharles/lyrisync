@@ -11,11 +11,10 @@ function setup(overrides: Partial<Parameters<typeof ImportScreen>[0]> = {}) {
     onLyricsChange: vi.fn(),
     audio: null,
     onAudioFile: vi.fn(),
-    settings: { language: 'auto' as const, model: 'base' as const },
+    settings: { language: 'auto' as const, mode: 'max' as const },
     onSettingsChange: vi.fn(),
     device: 'wasm' as const,
     onSync: vi.fn(),
-    onManual: vi.fn(),
     onOpenLrc: vi.fn(),
     ...overrides,
   };
@@ -30,25 +29,41 @@ function setup(overrides: Partial<Parameters<typeof ImportScreen>[0]> = {}) {
 const audio: AudioAsset = { file: new File(['x'], 'song.mp3', { type: 'audio/mpeg' }), url: 'blob:x', duration: 228 };
 
 describe('ImportScreen', () => {
-  it('disables sync until lyrics and audio are both present', () => {
+  it('disables sync until lyrics and audio are both present, and says what is missing', () => {
     setup({ lyricsText: 'One line' });
     expect(screen.getByRole('button', { name: 'Sync lyrics' })).toBeDisabled();
-    expect(screen.getByText('Add an audio file to get started.')).toBeInTheDocument();
+    const checklist = document.querySelector('.checklist')!;
+    expect(checklist.querySelector('.is-ok')).toHaveTextContent('Lyrics');
+    expect(checklist.querySelectorAll('.is-ok')).toHaveLength(1);
   });
 
   it('starts the sync when ready', async () => {
     const props = setup({ lyricsText: 'One line\nTwo lines', audio });
-    expect(screen.getByText('2 lines')).toBeInTheDocument();
+    expect(screen.getAllByText('2 lines').length).toBeGreaterThan(0);
     expect(screen.getByText('song.mp3')).toBeInTheDocument();
-    expect(screen.getByText(/3:48/)).toBeInTheDocument();
+    expect(screen.getAllByText(/3:48/).length).toBeGreaterThan(0);
     await userEvent.click(screen.getByRole('button', { name: 'Sync lyrics' }));
     expect(props.onSync).toHaveBeenCalledOnce();
   });
 
-  it('offers to open pasted LRC in the editor', async () => {
-    const props = setup({ lyricsText: '[00:01.00]a\n[00:02.00]b' });
-    await userEvent.click(screen.getByRole('button', { name: 'Open it in the editor' }));
+  it('opens pasted LRC for review once the track is there', async () => {
+    setup({ lyricsText: '[00:01.00]a\n[00:02.00]b' });
+    expect(screen.getByText('This text already has timestamps (.lrc): add the track to open it.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open it' })).toBeDisabled();
+  });
+
+  it('opens pasted LRC when the track is there', async () => {
+    const props = setup({ lyricsText: '[00:01.00]a\n[00:02.00]b', audio });
+    await userEvent.click(screen.getByRole('button', { name: 'Open it' }));
     expect(props.onOpenLrc).toHaveBeenCalledOnce();
+    // There is no manual mode any more: the review screen fixes everything.
+    expect(screen.queryByRole('button', { name: /time the lines myself/ })).not.toBeInTheDocument();
+  });
+
+  it('imports lyrics or an .lrc from a file', async () => {
+    const props = setup();
+    await userEvent.upload(screen.getByTestId('lyrics-file'), new File(['[00:01.00]From a file'], 'song.lrc', { type: 'text/plain' }));
+    await vi.waitFor(() => expect(props.onLyricsChange).toHaveBeenCalledWith('[00:01.00]From a file'));
   });
 
   it('accepts audio files and rejects others', async () => {
@@ -60,9 +75,22 @@ describe('ImportScreen', () => {
     expect(props.onAudioFile).toHaveBeenCalledOnce();
   });
 
-  it('shows model sizes for the detected device and a Malagasy hint', () => {
-    setup({ device: 'webgpu', settings: { language: 'mg', model: 'base' } });
-    expect(screen.getByRole('option', { name: /Balanced — ~206 MB/ })).toBeInTheDocument();
-    expect(screen.getByText(/covers Malagasy poorly/)).toBeInTheDocument();
+  it('shows each mode with its time and download size for the detected device', async () => {
+    const props = setup({ device: 'webgpu', settings: { language: 'mg', mode: 'max' } });
+    expect(screen.getByRole('radio', { name: /Maximum accuracy/ })).toBeChecked();
+    expect(screen.getByText('1257 MB on first run')).toBeInTheDocument();
+    expect(screen.getByText('671 MB on first run')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: /Fast/ }));
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ mode: 'fast' });
+  });
+
+  it('picks the sung language with a segmented control, arrows included', async () => {
+    const props = setup({ settings: { language: 'auto', mode: 'max' } });
+    expect(screen.getByRole('radio', { name: 'Auto' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByRole('radio', { name: 'Malagasy' }));
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ language: 'mg' });
+    screen.getByRole('radio', { name: 'Auto' }).focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ language: 'fr' });
   });
 });

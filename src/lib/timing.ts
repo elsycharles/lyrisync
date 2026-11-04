@@ -4,7 +4,7 @@ import type { LyricLine } from './types';
 /** Gap assumed between lines when nothing else is known. */
 const DEFAULT_GAP = 3;
 
-/** Index of the line being sung at time `t`, or -1 before the first timed line. */
+/** Index of the line being sung at time `t` (the last one that has started); -1 before the first. */
 export function activeLineIndex(lines: readonly LyricLine[], t: number): number {
   let best = -1;
   let bestTime = -Infinity;
@@ -18,18 +18,38 @@ export function activeLineIndex(lines: readonly LyricLine[], t: number): number 
   return best;
 }
 
-/** Moves one line by `delta` seconds (clamped at 0). */
-export function nudgeLine(lines: LyricLine[], id: string, delta: number): LyricLine[] {
-  return shiftLines(lines, new Set([id]), delta);
+/** The line with a new start, set by hand. */
+export function withStart(line: LyricLine, time: number): LyricLine {
+  return { ...line, time: roundCs(Math.max(0, time)), source: 'manual' };
 }
 
-/** Moves every line in `ids` by `delta` seconds. Untimed lines are left alone. */
-export function shiftLines(lines: LyricLine[], ids: ReadonlySet<string>, delta: number): LyricLine[] {
-  return lines.map((l) =>
-    ids.has(l.id) && l.time !== null
-      ? { ...l, time: roundCs(Math.max(0, l.time + delta)), source: 'manual' }
-      : l,
-  );
+/** Moves one line's start by `delta` seconds (clamped at 0). */
+export function nudgeLine(lines: LyricLine[], id: string, delta: number): LyricLine[] {
+  return lines.map((l) => (l.id === id && l.time !== null ? withStart(l, l.time + delta) : l));
+}
+
+/**
+ * "This line ends now, the next one starts now": what "Set & next" does, pressed as the
+ * line at `index` finishes. The next line gets the start; nothing follows the last line.
+ */
+export function startNextAt(lines: LyricLine[], index: number, t: number): LyricLine[] {
+  const next = lines[index + 1];
+  if (index < 0 || !next) return lines;
+  const out = lines.slice();
+  out[index + 1] = withStart(next, t);
+  return out;
+}
+
+/** Ids of the lines timed before an earlier line (after a slip of "Set & next", say). */
+export function outOfOrderIds(lines: readonly LyricLine[]): Set<string> {
+  const flags = new Set<string>();
+  let last = -Infinity;
+  for (const l of lines) {
+    if (l.time === null) continue;
+    if (l.time < last) flags.add(l.id);
+    last = Math.max(last, l.time);
+  }
+  return flags;
 }
 
 export function countUntimed(lines: readonly LyricLine[]): number {
@@ -80,4 +100,16 @@ export function fillMissingTimes(lines: LyricLine[], duration?: number): LyricLi
     i = j;
   }
   return result;
+}
+
+/** Index of the closest line before `from` that has a time, or -1. */
+export function previousTimedIndex(lines: readonly LyricLine[], from: number): number {
+  for (let i = Math.min(from, lines.length) - 1; i >= 0; i--) if (lines[i]!.time !== null) return i;
+  return -1;
+}
+
+/** Index of the closest line after `from` that has a time, or -1. */
+export function nextTimedIndex(lines: readonly LyricLine[], from: number): number {
+  for (let i = Math.max(-1, from) + 1; i < lines.length; i++) if (lines[i]!.time !== null) return i;
+  return -1;
 }

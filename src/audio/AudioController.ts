@@ -107,7 +107,8 @@ export class AudioController {
     this.playing = !this.el.paused && !this.el.ended;
   }
 
-  private emit(): void {
+  /** Tells subscribers the playhead or state changed (protected for test doubles). */
+  protected emit(): void {
     for (const l of this.listeners) l();
   }
 }
