@@ -168,12 +168,9 @@ describe('fixing lines on the result screen', () => {
     expect(screen.queryByText('needs timing')).not.toBeInTheDocument();
   });
 
-  it('shifts every line at once, and flags a line timed before the previous one', async () => {
+  it('flags a line timed before the previous one', async () => {
     const ctrl = new FakeAudio();
     render(<Editable ctrl={ctrl} />);
-    await userEvent.click(screen.getByText('Shift every line'));
-    await userEvent.click(screen.getByRole('button', { name: 'Shift every line by −0.1 s' }));
-    expect(latest.map((l) => l.time)).toEqual([9.7, 14.15, null]);
     // A slip of "set & next" before the line even started: the next line lands before it.
     await userEvent.click(lineButton('Stay a little longer'));
     ctrl.now = 9;

@@ -9,7 +9,7 @@ async function exportLrc(page: Page) {
   return { name: download.suggestedFilename(), text: await readFile((await download.path())!, 'utf8') };
 }
 
-test('open pasted .lrc for review, nudge a line, shift every line, then export', async ({ page }) => {
+test('open pasted .lrc for review, nudge a line, undo, then export', async ({ page }) => {
   await page.goto('/');
   expect(await page.evaluate(() => crossOriginIsolated)).toBe(true);
   await fillImport(page, LRC);
@@ -25,10 +25,8 @@ test('open pasted .lrc for review, nudge a line, shift every line, then export',
   await page.keyboard.press('Shift+ArrowRight');
   await expect(page.getByRole('list', { name: 'Synced lines' }).locator('time').first()).toHaveText('00:10.90');
 
-  await page.getByText('Shift every line').click();
-  await page.getByRole('button', { name: 'Shift every line by −1 s' }).click();
+  await page.getByRole('button', { name: 'Shift by −1 s' }).click();
   await page.getByRole('button', { name: 'Undo' }).click();
-  await page.getByRole('button', { name: 'Shift every line by −0.1 s' }).click();
 
   await page.getByText('Track info (optional)').click();
   await page.getByLabel('Artist').fill('Demo Artist');
@@ -38,9 +36,9 @@ test('open pasted .lrc for review, nudge a line, shift every line, then export',
   expect(text).toContain('[ar:Demo Artist]');
   expect(text).toMatch(/\[re:LyriSync \d+\.\d+\.\d+\]/);
   expect(lrcLines(text)).toEqual([
-    { time: 10.8, text: 'Stay a little longer' },
-    { time: 14.15, text: 'The harbour falls asleep behind us' },
-    { time: 18.8, text: 'You already know how it ends' },
+    { time: 10.9, text: 'Stay a little longer' },
+    { time: 14.25, text: 'The harbour falls asleep behind us' },
+    { time: 18.9, text: 'You already know how it ends' },
   ]);
 });
 

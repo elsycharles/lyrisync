@@ -7,7 +7,6 @@ import {
   nudgeLine,
   outOfOrderIds,
   previousTimedIndex,
-  shiftLines,
   startNextAt,
 } from './timing';
 import type { LyricLine } from './types';
@@ -43,11 +42,6 @@ describe('nudge and shift', () => {
   it('clamps at zero and avoids float noise', () => {
     expect(nudgeLine(mk([0.05]), 'l0', -1)[0]!.time).toBe(0);
     expect(nudgeLine(mk([0.1]), 'l0', 0.2)[0]!.time).toBe(0.3);
-  });
-
-  it('shifts a selection and leaves untimed lines alone', () => {
-    const out = shiftLines(mk([10, null, 20]), new Set(['l0', 'l1', 'l2']), -0.2);
-    expect(out.map((l) => l.time)).toEqual([9.8, null, 19.8]);
   });
 
   it('counts untimed lines', () => {
