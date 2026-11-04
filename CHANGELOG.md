@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-11-04
+
 ### Fixed
 
 - On phones, every tap drew the browser's square highlight: it is gone, taps get the
@@ -168,7 +170,8 @@ First MVP release.
 - Installable PWA that works offline after the first run.
 - COOP/COEP headers for Cloudflare Pages and Netlify.
 
-[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.4.0...develop
+[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.4.1...develop
+[0.4.1]: https://github.com/elsycharles/lyrisync/releases/tag/v0.4.1
 [0.4.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.4.0
 [0.3.2]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.2
 [0.3.1]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.1
