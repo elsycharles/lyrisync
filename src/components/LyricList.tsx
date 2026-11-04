@@ -8,7 +8,7 @@ import { insertLineAfter, removeLine, setLineText } from '../lib/lineEdits';
 import { formatTimestamp } from '../lib/time';
 import { activeLineIndex, outOfOrderIds } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
-import { LineTools } from './LineTools';
+import { INTRO_ID, IntroTools, LineTools } from './LineTools';
 import { useLineEditing } from './useLineEditing';
 
 /** An automatically placed line whose timing is less certain than the rest. */
@@ -25,6 +25,23 @@ interface Props {
   /** Controlled selection (the result screen's transport moves it too). */
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+}
+
+/**
+ * Scrolls the list itself, never the page, so that `row` is in view: placed a third of
+ * the way down when following the music (`anchor`), or just brought inside otherwise.
+ */
+function revealInList(list: HTMLElement, row: HTMLElement, anchor: boolean) {
+  const l = list.getBoundingClientRect();
+  const r = row.getBoundingClientRect();
+  if (l.height === 0) return;
+  let delta = 0;
+  if (anchor) delta = r.top - l.top - l.height * 0.3;
+  else if (r.top < l.top + 4) delta = r.top - l.top - 4;
+  else if (r.bottom > l.bottom - 4) delta = r.bottom - l.bottom + 4;
+  if (Math.abs(delta) < 2) return;
+  if (typeof list.scrollBy === 'function') list.scrollBy({ top: delta, behavior: anchor ? 'smooth' : 'auto' });
+  else list.scrollTop += delta;
 }
 
 /** The line whose text is being typed: an existing one, or a new one after `afterId`. */
@@ -47,23 +64,33 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
   const editable = !!onEdit;
   const edit = useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSelectedId });
   const outOfOrder = useMemo(() => outOfOrderIds(lines), [lines]);
+  // An untimed line before the last timed one is a gap to fix; the ones after it are
+  // just not reached yet (timing by hand), so they stay calm.
+  const lastTimed = useMemo(() => {
+    for (let i = lines.length - 1; i >= 0; i--) if (lines[i]!.time !== null) return i;
+    return -1;
+  }, [lines]);
   const [editing, setEditing] = useState<Editing | null>(null);
   // After Enter or Escape in a text field, the focus goes back to that line.
   const refocus = useRef<string | null>(null);
+  // When the user last scrolled the list by hand: following the music waits a little.
+  const userScrolled = useRef(0);
+  const row = (id: string) => listRef.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`) ?? null;
 
-  // Follow the sung line while playing, unless the user is busy with a line of their own.
+  // Follow the sung line while playing, unless the user is busy with a line of their own
+  // or is scrolling the list. Only the list moves: the page (and its player) stays put.
   useEffect(() => {
-    if (!playing || active < 0 || selectedId) return;
+    if (!playing || active < 0 || selectedId || Date.now() - userScrolled.current < 4000) return;
     const id = lines[active]?.id;
-    const el = id ? listRef.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`) : null;
-    el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const el = id ? row(id) : null;
+    if (listRef.current && el) revealInList(listRef.current, el, true);
   }, [active, lines, playing, selectedId]);
 
   // Keep the selected line in view when it changes from the keyboard.
   useEffect(() => {
     if (!selectedId) return;
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(selectedId)}"]`);
-    el?.scrollIntoView({ block: 'nearest' });
+    const el = row(selectedId);
+    if (listRef.current && el) revealInList(listRef.current, el, false);
   }, [selectedId]);
 
   useEffect(() => {
@@ -80,8 +107,8 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
     } else {
       // A new line is only added once it has a text; the line before stays selected, so
       // "set & next" pressed as it finishes gives the new line its start.
-      const index = lines.findIndex((l) => l.id === editing.afterId);
-      if (text !== null && text.trim() && index >= 0) onEdit?.(insertLineAfter(lines, index, text).lines);
+      const index = editing.afterId === INTRO_ID ? -1 : lines.findIndex((l) => l.id === editing.afterId);
+      if (text !== null && text.trim() && (index >= 0 || editing.afterId === INTRO_ID)) onEdit?.(insertLineAfter(lines, index, text).lines);
       if (byKey) refocus.current = editing.afterId;
     }
     setEditing(null);
@@ -94,8 +121,50 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
     setSelectedId((out[index] ?? out[index - 1])?.id ?? null);
   };
 
+  const introSelected = selectedId === INTRO_ID;
+  const addingFirst = editing?.kind === 'add' && editing.afterId === INTRO_ID;
+
   return (
-    <ol className="lines lines--scroll" ref={listRef} aria-label={t.result.linesLabel} {...spaceToggleProps(() => ctrl.toggle())}>
+    <ol
+      className="lines lines--scroll"
+      ref={listRef}
+      aria-label={t.result.linesLabel}
+      onWheel={() => (userScrolled.current = Date.now())}
+      onTouchMove={() => (userScrolled.current = Date.now())}
+      {...spaceToggleProps(() => ctrl.toggle())}
+    >
+      {editable && (
+        // Before the first line: "set & next" here, as the intro ends, starts the first line.
+        <li data-id={INTRO_ID}>
+          <button
+            type="button"
+            className={['line', 'line--intro', active < 0 && 'line--active', introSelected && 'line--selected'].filter(Boolean).join(' ')}
+            aria-current={active < 0 ? 'true' : undefined}
+            aria-pressed={introSelected}
+            onClick={() => setSelectedId(introSelected ? null : INTRO_ID)}
+            onDoubleClick={() => {
+              setSelectedId(INTRO_ID);
+              edit.playIntro();
+            }}
+          >
+            <time>{formatTimestamp(0)}</time>
+            <span className="line__text">♪ {t.result.intro}</span>
+          </button>
+          {introSelected && !editing && (
+            <IntroTools
+              onSetNext={() => edit.setNext(INTRO_ID)}
+              onPlay={edit.playIntro}
+              onNext={edit.next}
+              onAddFirst={() => setEditing({ kind: 'add', afterId: INTRO_ID })}
+            />
+          )}
+        </li>
+      )}
+      {addingFirst && (
+        <li>
+          <LineTextField time={null} initial="" placeholder={t.editor.newLine} onDone={finishEditing} />
+        </li>
+      )}
       {lines.map((line, i) => {
         const isActive = i === active;
         const isSelected = line.id === selectedId;
@@ -104,7 +173,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
           'line',
           isActive && 'line--active',
           isSelected && 'line--selected',
-          untimed && 'line--error',
+          untimed && (i < lastTimed ? 'line--error' : 'line--pending'),
           isToCheck(line) && 'line--check',
         ]
           .filter(Boolean)
@@ -143,7 +212,6 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
               {editable && isSelected && !editing && (
                 <LineTools
                   line={line}
-                  isFirst={i === 0}
                   isLast={i === lines.length - 1}
                   onNudge={(d) => edit.nudge(line.id, d)}
                   onSetNext={() => edit.setNext(line.id)}

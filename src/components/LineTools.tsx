@@ -5,12 +5,14 @@ import { activeLineIndex, previousTimedIndex } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
 import { NextLineIcon, PencilIcon, PlayIcon, PlusIcon, PrevLineIcon, TargetIcon, TrashIcon } from './icons';
 
+/** The selection id of the intro row: what comes before the first line. */
+export const INTRO_ID = '__intro__';
+
 const NUDGES_BEFORE = [-1, -0.1];
 const NUDGES_AFTER = [0.1, 1];
 
 interface Props {
   line: LyricLine;
-  isFirst: boolean;
   isLast: boolean;
   onNudge: (delta: number) => void;
   /** The next line starts at the playhead (pressed as this one finishes); selects it. */
@@ -33,7 +35,7 @@ interface Props {
  * text: edit, add a line after it, delete it (small icons, so the row stays light).
  */
 export function LineTools(props: Props) {
-  const { line, isFirst, isLast, onNudge, onSetNext, onPlay, onPrevious, onNext } = props;
+  const { line, isLast, onNudge, onSetNext, onPlay, onPrevious, onNext } = props;
   const { t } = useI18n();
   const untimed = line.time === null;
   const nudgeButton = (d: number) => (
@@ -52,7 +54,7 @@ export function LineTools(props: Props) {
         {NUDGES_AFTER.map(nudgeButton)}
       </div>
       <div className="line-tools__group">
-        <button type="button" className="tool-btn" onClick={onPrevious} disabled={isFirst} title={t.editor.previousHint}>
+        <button type="button" className="tool-btn" onClick={onPrevious} title={t.editor.previousHint}>
           <PrevLineIcon size={13} /> {t.editor.previous}
         </button>
         <button type="button" className="tool-btn" onClick={onPlay} disabled={untimed} title={t.editor.playFrom}>
@@ -80,6 +82,34 @@ export function LineTools(props: Props) {
             title={t.editor.deleteLine}
           >
             <TrashIcon size={15} />
+          </button>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The intro's tools: listen from the start, move on, add a line at the top, and
+ * "set & next", pressed as the intro ends, which gives the first line its start.
+ */
+export function IntroTools({ onSetNext, onPlay, onNext, onAddFirst }: { onSetNext: () => void; onPlay: () => void; onNext: () => void; onAddFirst: () => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="line-tools" role="group" aria-label={t.editor.selected}>
+      <div className="line-tools__group">
+        <button type="button" className="tool-btn" onClick={onPlay} title={t.editor.playFrom}>
+          <PlayIcon size={13} /> {t.editor.listen}
+        </button>
+        <button type="button" className="tool-btn" onClick={onNext} title={t.editor.nextHint}>
+          {t.editor.next} <NextLineIcon size={13} />
+        </button>
+        <button type="button" className="tool-btn tool-btn--main" onClick={onSetNext} title={t.editor.setNextHint}>
+          <TargetIcon size={14} /> {t.editor.setNext}
+        </button>
+        <span className="line-tools__edit">
+          <button type="button" className="tool-btn tool-btn--icon" onClick={onAddFirst} aria-label={t.editor.addLine} title={t.editor.addLine}>
+            <PlusIcon size={15} />
           </button>
         </span>
       </div>

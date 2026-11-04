@@ -6,6 +6,29 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-11-04
+
+### Added
+
+- Timing by hand, with no model to download: "or time the lines myself" on the import
+  screen (and "Time it myself" when a sync fails) opens the lyrics untimed on the
+  review screen. A "♪ Intro" row before the first line takes "Set & next" as the intro
+  ends, which starts the first line; then "Set & next" as each line ends. The intro's
+  ＋ also adds a line at the very top.
+- Watching on a phone: "Full screen" on the stage shows only the lyrics, large (true
+  full screen where the browser allows it, the screen kept awake); and while the stage
+  is scrolled out of view, a mini player at the bottom keeps play/pause, ⏮ / ⏭ and the
+  line being sung at hand.
+
+### Fixed
+
+- On a phone, playback no longer scrolls the whole page down to the sung line (the
+  player went out of view, so pausing was impossible): only the line list follows the
+  music, and it waits a few seconds after you scroll it yourself.
+- Keyboard tips were shown on touch screens.
+- Lines not timed yet at the end of the list (timing by hand) look calm instead of
+  like errors; a gap between timed lines is still marked.
+
 ## [0.2.0] — 2026-11-04
 
 ### Changed
@@ -109,6 +132,7 @@ First MVP release.
 - Installable PWA that works offline after the first run.
 - COOP/COEP headers for Cloudflare Pages and Netlify.
 
-[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.2.0...develop
+[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.3.0...develop
+[0.3.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.0
 [0.2.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.2.0
 [0.1.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.1.0

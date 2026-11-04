@@ -37,6 +37,8 @@ export function describeVersion(label: VersionLabel, t: Messages, lang: Lang): s
   switch (label.kind) {
     case 'sync':
       return l.sync;
+    case 'manual':
+      return l.manual;
     case 'lrc-open':
       return l.lrcOpen;
     case 'lrc-text':

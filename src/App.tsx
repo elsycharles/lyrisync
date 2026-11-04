@@ -117,6 +117,18 @@ export function App() {
     }
   }, [history, lang, pipeline, project.audio, project.lines.length, project.lyricsText, project.metadata, settings]);
 
+  // Timing by hand: the lyrics, untimed, straight on the review screen. No model at all.
+  const startManual = useCallback(() => {
+    if (!project.audio) return;
+    pipeline.reset();
+    if (!history.projectId || project.lines.length > 0) {
+      history.start({ lyricsText: project.lyricsText, metadata: project.metadata, audio: project.audio });
+    }
+    history.labelNext({ kind: 'manual' });
+    dispatch({ type: 'lines/replace', lines: parseLyrics(project.lyricsText), confidence: null });
+    setScreen('result');
+  }, [history, pipeline, project.audio, project.lines.length, project.lyricsText, project.metadata]);
+
   const exportLrc = useCallback(
     (current?: { lines: LyricLine[]; metadata: LrcMetadata }) => {
       const source = current ?? { lines: project.lines, metadata: project.metadata };
@@ -198,6 +210,7 @@ export function App() {
             onSettingsChange={updateSettings}
             device={device}
             onSync={startSync}
+            onManual={startManual}
             onOpenLrc={openLrcText}
             resume={resume}
           />
@@ -216,6 +229,7 @@ export function App() {
               history.close();
               setScreen('import');
             }}
+            onManual={startManual}
           />
         )}
         {screen === 'result' && (

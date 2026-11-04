@@ -66,6 +66,7 @@ export const fr = {
     deviceWasm: 'Calcul sur le processeur : WebGPU n’est pas disponible dans ce navigateur.',
     modelHint: 'Les modèles sont téléchargés une seule fois, puis gardés en cache.',
     sync: 'Synchroniser les paroles',
+    manual: 'ou caler les lignes moi-même, sans télécharger de modèle',
     needLyrics: 'Paroles',
     needAudio: 'Morceau',
     notAudio: 'Ce fichier ne semble pas être un fichier audio.',
@@ -99,6 +100,7 @@ export const fr = {
     retry: 'Réessayer',
     back: 'Retour',
     otherFile: 'Choisir un autre fichier',
+    manual: 'Caler moi-même',
   },
   player: {
     play: 'Lecture',
@@ -108,6 +110,7 @@ export const fr = {
     speedHint: 'Ralentir aide à viser sur les passages rapides',
     prevLine: 'Ligne précédente',
     nextLine: 'Ligne suivante',
+    mini: 'Lecteur',
   },
   result: {
     title: 'Résultat',
@@ -123,6 +126,8 @@ export const fr = {
     lrcEmpty: 'Ce texte ne contient aucune ligne de paroles : rien n’a été changé.',
     linesCount: (n: number) => (n <= 1 ? `${n} ligne` : `${n} lignes`),
     nowPlaying: 'En cours',
+    focus: 'Plein écran',
+    exitFocus: 'Quitter le plein écran',
     next: 'Ensuite',
     intro: 'Intro',
     end: 'Fin du morceau',
@@ -142,6 +147,9 @@ export const fr = {
         ? '1 ligne est moins sûre que les autres. Écoutez-la : un clic dessus vous y emmène.'
         : `${n} lignes sont moins sûres que les autres. Écoutez-les : un clic dessus vous y emmène.`,
     fixNow: 'Les caler maintenant',
+    manualNotice:
+      'Aucune ligne n’est calée : lancez la lecture et appuyez sur « Caler et suivante » quand l’intro se termine, puis à la fin de chaque ligne.',
+    manualStart: 'Commencer',
     metadata: 'Infos du morceau (optionnel)',
     trackTitle: 'Titre',
     artist: 'Artiste',
@@ -216,6 +224,7 @@ export const fr = {
     resumeNotice: (title: string, when: string) => `Votre dernier travail est enregistré : « ${title} », modifié le ${when}.`,
     label: {
       sync: 'Synchronisation automatique',
+      manual: 'Calage manuel commencé',
       lrcOpen: 'Fichier .lrc ouvert',
       lrcText: 'Texte .lrc modifié',
       undo: 'Annulation',
@@ -302,6 +311,7 @@ export const en: Messages = {
     deviceWasm: 'Running on the CPU: WebGPU is not available in this browser.',
     modelHint: 'The models are downloaded once, then kept in the cache.',
     sync: 'Sync lyrics',
+    manual: 'or time the lines myself, with no model to download',
     needLyrics: 'Lyrics',
     needAudio: 'Track',
     notAudio: 'This file does not look like an audio file.',
@@ -335,6 +345,7 @@ export const en: Messages = {
     retry: 'Try again',
     back: 'Back',
     otherFile: 'Choose another file',
+    manual: 'Time it myself',
   },
   player: {
     play: 'Play',
@@ -344,6 +355,7 @@ export const en: Messages = {
     speedHint: 'Slowing down helps you aim on fast passages',
     prevLine: 'Previous line',
     nextLine: 'Next line',
+    mini: 'Player',
   },
   result: {
     title: 'Result',
@@ -359,6 +371,8 @@ export const en: Messages = {
     lrcEmpty: 'This text has no lyric lines: nothing was changed.',
     linesCount: (n: number) => (n === 1 ? `${n} line` : `${n} lines`),
     nowPlaying: 'Now',
+    focus: 'Full screen',
+    exitFocus: 'Exit full screen',
     next: 'Next',
     intro: 'Intro',
     end: 'End of the track',
@@ -378,6 +392,8 @@ export const en: Messages = {
         ? '1 line is less certain than the others. Give it a listen: clicking it takes you there.'
         : `${n} lines are less certain than the others. Give them a listen: clicking one takes you there.`,
     fixNow: 'Time them now',
+    manualNotice: 'No line is timed yet: start playback and press “Set & next” as the intro ends, then as each line ends.',
+    manualStart: 'Start',
     metadata: 'Track info (optional)',
     trackTitle: 'Title',
     artist: 'Artist',
@@ -452,6 +468,7 @@ export const en: Messages = {
     resumeNotice: (title: string, when: string) => `Your last work is saved: “${title}”, changed ${when}.`,
     label: {
       sync: 'Automatic sync',
+      manual: 'Manual timing started',
       lrcOpen: '.lrc file opened',
       lrcText: '.lrc text edited',
       undo: 'Undo',

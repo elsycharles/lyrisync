@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { fillImport, lrcLines } from './helpers';
+import { fillImport, LYRICS, lrcLines } from './helpers';
 
 const LRC = ['[ti:Stay a Little Longer]', '[00:09.80]Stay a little longer', '[00:14.25]The harbour falls asleep behind us', '[00:18.90]You already know how it ends'].join('\n');
 
@@ -23,7 +23,7 @@ test('open pasted .lrc for review, nudge a line, undo, then export', async ({ pa
   await page.getByRole('list', { name: 'Synced lines' }).getByText('Stay a little longer').click();
   await page.getByRole('button', { name: 'Shift by +0.1 s' }).click();
   await page.keyboard.press('Shift+ArrowRight');
-  await expect(page.getByRole('list', { name: 'Synced lines' }).locator('time').first()).toHaveText('00:10.90');
+  await expect(page.getByRole('list', { name: 'Synced lines' }).getByText('Stay a little longer').locator('..').locator('time')).toHaveText('00:10.90');
 
   await page.getByRole('button', { name: 'Shift by −1 s' }).click();
   await page.getByRole('button', { name: 'Undo' }).click();
@@ -110,4 +110,26 @@ test('edit, add and delete lines, then fix the whole .lrc as text, and export', 
   ]);
   await page.getByRole('tab', { name: 'List' }).click();
   await expect(list.getByText('Just a little').locator('..').locator('time')).toHaveText('00:12.00');
+});
+
+test('time the lines by hand with no model: "set & next" as the intro ends, then as each line ends', async ({ page }) => {
+  const modelRequests: string[] = [];
+  page.on('request', (r) => /huggingface|hf\.co/.test(r.url()) && modelRequests.push(r.url()));
+  await page.goto('/');
+  await fillImport(page);
+  await page.getByRole('button', { name: 'or time the lines myself, with no model to download' }).click();
+  await expect(page.getByText(/No line is timed yet/)).toBeVisible();
+  await page.getByRole('button', { name: 'Start' }).click();
+  for (const at of [1, 3, 5.5, 8]) {
+    await page.waitForFunction((t) => document.querySelector('audio')!.currentTime > t, at);
+    await page.keyboard.press('c');
+  }
+  await page.keyboard.press('Space');
+  await expect(page.getByText('needs timing')).toHaveCount(0);
+
+  const lines = lrcLines((await exportLrc(page)).text);
+  expect(lines.map((l) => l.text)).toEqual(LYRICS);
+  expect(lines[0]!.time).toBeGreaterThanOrEqual(1);
+  for (let i = 1; i < lines.length; i++) expect(lines[i]!.time).toBeGreaterThan(lines[i - 1]!.time);
+  expect(modelRequests).toEqual([]);
 });

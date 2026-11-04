@@ -201,3 +201,19 @@ export function BackIcon({ size = 16, className }: IconProps) {
     </svg>
   );
 }
+
+export function ExpandIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M2.8 6V2.8H6M10 2.8h3.2V6M13.2 10v3.2H10M6 13.2H2.8V10" />
+    </svg>
+  );
+}
+
+export function ShrinkIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M6 2.8V6H2.8M13.2 6H10V2.8M10 13.2V10h3.2M2.8 10H6v3.2" />
+    </svg>
+  );
+}

@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { useSpaceToggle } from '../hooks/useSpaceToggle';
 import { useI18n } from '../i18n/useI18n';
@@ -8,10 +8,11 @@ import { countUntimed, nextTimedIndex, previousTimedIndex } from '../lib/timing'
 import type { LrcMetadata, LyricLine } from '../lib/types';
 import type { SaveStatus } from '../state/useProjectHistory';
 import { ConfidenceChip } from './ConfidenceChip';
-import { DownloadIcon, UndoIcon } from './icons';
+import { DownloadIcon, ExpandIcon, ShrinkIcon, UndoIcon } from './icons';
 import { LyricList, isToCheck } from './LyricList';
-import { currentLineIndex, playLine } from './LineTools';
+import { currentLineIndex, INTRO_ID, playLine } from './LineTools';
 import { LyricsStage } from './LyricsStage';
+import { MiniPlayer } from './MiniPlayer';
 import { Player } from './Player';
 import { lineShortcuts, modKey, Shortcuts } from './Shortcuts';
 
@@ -61,11 +62,67 @@ export function ResultScreen(props: Props) {
   const fixUntimed = () => {
     const first = lines.findIndex((l) => l.time === null);
     if (first < 0) return;
+    if (first === 0) {
+      // Nothing before it: the intro, from the start; "set & next" as it ends.
+      setSelectedId(INTRO_ID);
+      ctrl.seek(0);
+      void ctrl.play();
+      return;
+    }
     const before = lines[first - 1] ?? lines[first]!;
     setSelectedId(before.id);
     const cue = lines[previousTimedIndex(lines, first)];
     if (cue) playLine(ctrl, cue);
   };
+
+  // The stage: when it is scrolled out of view (on a phone, down in the list), a mini
+  // player keeps pause at hand; "full screen" shows only the lyrics, large.
+  const stageRef = useRef<HTMLElement>(null);
+  const [stageInView, setStageInView] = useState(true);
+  useEffect(() => {
+    // What matters is the stage's play/pause row: once it has scrolled away, the mini
+    // player takes over.
+    const el = stageRef.current?.querySelector('.player') ?? stageRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => setStageInView(entry!.isIntersecting));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const [focus, setFocus] = useState(false);
+  const enterFocus = () => {
+    setFocus(true);
+    // True full screen where the browser allows it; the stage covers the page anyway.
+    stageRef.current?.requestFullscreen?.().catch(() => {});
+  };
+  const exitFocus = useCallback(() => {
+    setFocus(false);
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!focus) return;
+    const onFullscreen = () => !document.fullscreenElement && setFocus(false);
+    const onKey = (e: globalThis.KeyboardEvent) => e.key === 'Escape' && exitFocus();
+    document.addEventListener('fullscreenchange', onFullscreen);
+    window.addEventListener('keydown', onKey);
+    document.documentElement.classList.add('no-scroll');
+    // The screen stays on while the lyrics are watched.
+    let lock: WakeLockSentinel | null = null;
+    let live = true;
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').then(
+        (l) => (live ? (lock = l) : void l.release()),
+        () => {},
+      );
+    }
+    return () => {
+      live = false;
+      document.removeEventListener('fullscreenchange', onFullscreen);
+      window.removeEventListener('keydown', onKey);
+      document.documentElement.classList.remove('no-scroll');
+      void lock?.release();
+    };
+  }, [exitFocus, focus]);
 
   // The lines as a list, or the whole .lrc as text to edit.
   const [view, setView] = useState<'list' | 'lrc'>('list');
@@ -119,15 +176,27 @@ export function ResultScreen(props: Props) {
   };
 
   return (
-    <div className="result">
+    <div className={`result${!stageInView && !focus ? ' result--mini' : ''}`}>
       <div className="result__side">
-        <section className="stage-card" aria-labelledby="result-title">
+        <section ref={stageRef} className={`stage-card${focus ? ' stage-card--focus' : ''}`} aria-labelledby="result-title">
           <h2 id="result-title" className="visually-hidden">
             {t.result.title}
           </h2>
           <div className="stage-card__head">
-            <span className="stage-card__title">{metadata.title || '—'}</span>
-            {metadata.artist && <span className="stage-card__artist">{metadata.artist}</span>}
+            <span className="stage-card__names">
+              <span className="stage-card__title">{metadata.title || '—'}</span>
+              {metadata.artist && <span className="stage-card__artist">{metadata.artist}</span>}
+            </span>
+            <button
+              type="button"
+              className="icon-btn stage-card__focus"
+              onClick={focus ? exitFocus : enterFocus}
+              aria-pressed={focus}
+              aria-label={focus ? t.result.exitFocus : t.result.focus}
+              title={focus ? t.result.exitFocus : t.result.focus}
+            >
+              {focus ? <ShrinkIcon /> : <ExpandIcon />}
+            </button>
           </div>
           <LyricsStage lines={lines} ctrl={ctrl} />
           <Player ctrl={ctrl} onPrevLine={() => goLine(-1)} onNextLine={() => goLine(1)} />
@@ -141,7 +210,15 @@ export function ResultScreen(props: Props) {
             </div>
           )}
 
-          {untimed > 0 && (
+          {untimed > 0 && untimed === lines.length && (
+            <div className="notice notice--row" role="status">
+              <span>{t.result.manualNotice}</span>
+              <button type="button" className="btn btn--primary btn--small" onClick={fixUntimed}>
+                {t.result.manualStart}
+              </button>
+            </div>
+          )}
+          {untimed > 0 && untimed < lines.length && (
             <div className="notice notice--row" role="status">
               <span>{t.result.untimedNotice(untimed)}</span>
               <button type="button" className="btn-link" onClick={fixUntimed}>
@@ -302,6 +379,9 @@ export function ResultScreen(props: Props) {
           )}
         </div>
       </section>
+      {!stageInView && !focus && (
+        <MiniPlayer ctrl={ctrl} lines={lines} onPrevLine={() => goLine(-1)} onNextLine={() => goLine(1)} />
+      )}
     </div>
   );
 }

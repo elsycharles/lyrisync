@@ -57,16 +57,7 @@ export function Player({ ctrl, title, subtitle, onPrevLine, onNextLine }: Props)
           aria-label={playing ? t.player.pause : t.player.play}
           aria-pressed={playing}
         >
-          {playing ? (
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-              <rect x="2.5" y="2" width="2.8" height="8" rx="1" fill="currentColor" />
-              <rect x="6.7" y="2" width="2.8" height="8" rx="1" fill="currentColor" />
-            </svg>
-          ) : (
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-              <path d="M3 1.8l7 4.2-7 4.2z" fill="currentColor" />
-            </svg>
-          )}
+          <PlayPauseGlyph playing={playing} />
         </button>
         {onNextLine && (
           <button type="button" className="transport" onClick={onNextLine} aria-label={t.player.nextLine} title={t.player.nextLine}>
@@ -105,5 +96,19 @@ export function Player({ ctrl, title, subtitle, onPrevLine, onNextLine }: Props)
         disabled={!hasDuration}
       />
     </div>
+  );
+}
+
+/** The play/pause button's glyph. */
+export function PlayPauseGlyph({ playing }: { playing: boolean }) {
+  return playing ? (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+      <rect x="2.5" y="2" width="2.8" height="8" rx="1" fill="currentColor" />
+      <rect x="6.7" y="2" width="2.8" height="8" rx="1" fill="currentColor" />
+    </svg>
+  ) : (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+      <path d="M3 1.8l7 4.2-7 4.2z" fill="currentColor" />
+    </svg>
   );
 }

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useReducer } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -89,9 +89,11 @@ class FakeAudio extends AudioController {
   }
   override async play() {
     this.playing = true;
+    this.emit();
   }
   override pause() {
     this.playing = false;
+    this.emit();
   }
   override seek(t: number) {
     this.now = t;
@@ -104,8 +106,8 @@ let latest: LyricLine[] = [];
 
 let latestMetadata: LrcMetadata = {};
 
-function Editable({ ctrl, onExport = vi.fn() }: { ctrl: AudioController; onExport?: () => void }) {
-  const [state, dispatch] = useReducer(projectReducer, { ...initialProject, lines, metadata: { title: 'Stay' } });
+function Editable({ ctrl, onExport = vi.fn(), initial = lines }: { ctrl: AudioController; onExport?: () => void; initial?: LyricLine[] }) {
+  const [state, dispatch] = useReducer(projectReducer, { ...initialProject, lines: initial, metadata: { title: 'Stay' } });
   latest = state.lines;
   latestMetadata = state.metadata;
   return (
@@ -202,7 +204,8 @@ describe('fixing lines on the result screen', () => {
   it('works from the keyboard and undoes', async () => {
     const ctrl = new FakeAudio();
     render(<Editable ctrl={ctrl} />);
-    fireEvent.keyDown(document.body, { key: 'ArrowDown' }); // selects the first line
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' }); // the intro: the music is before the first line
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' });
     fireEvent.keyDown(document.body, { key: 'ArrowDown' });
     fireEvent.keyDown(document.body, { key: 'ArrowLeft', shiftKey: true });
     expect(latest[1]!.time).toBe(13.25);
@@ -370,5 +373,95 @@ describe('editing the whole .lrc as text', () => {
     expect(onExport).toHaveBeenCalledOnce();
     expect(onExport.mock.calls[0]![0].lines[0]).toMatchObject({ text: 'Stay a little longer', time: 9 });
     expect(latest[0]!.time).toBe(9);
+  });
+});
+
+describe('timing by hand from the intro', () => {
+  const untimed: LyricLine[] = lines.map((l) => ({ ...l, time: null, source: null, confidence: undefined }));
+  const introRow = () => within(screen.getByRole('list', { name: 'Synced lines' })).getByText('♪ Intro').closest('button')!;
+
+  it('starts from the intro: "set & next" as it ends, then as each line ends', async () => {
+    const ctrl = new FakeAudio();
+    render(<Editable ctrl={ctrl} initial={untimed} />);
+    expect(screen.getByRole('status')).toHaveTextContent('No line is timed yet');
+    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(introRow()).toHaveAttribute('aria-pressed', 'true');
+    expect(ctrl.playing).toBe(true);
+    expect(ctrl.now).toBe(0);
+    ctrl.now = 9.5;
+    fireEvent.keyDown(document.body, { key: 'c' });
+    expect(latest[0]).toMatchObject({ time: 9.5, source: 'manual' });
+    expect(lineButton('Stay a little longer')).toHaveAttribute('aria-pressed', 'true');
+    ctrl.now = 14;
+    await userEvent.click(screen.getByRole('button', { name: 'Set & next' }));
+    ctrl.now = 18.4;
+    fireEvent.keyDown(document.body, { key: 'c' });
+    expect(latest.map((l) => l.time)).toEqual([9.5, 14, 18.4]);
+    expect(screen.queryByText('needs timing')).not.toBeInTheDocument();
+  });
+
+  it('moves between the intro and the first line, and adds a line at the top', async () => {
+    const ctrl = new FakeAudio();
+    render(<Editable ctrl={ctrl} />);
+    await userEvent.click(lineButton('Stay a little longer'));
+    fireEvent.keyDown(document.body, { key: 'Backspace' });
+    expect(introRow()).toHaveAttribute('aria-pressed', 'true');
+    expect(ctrl.now).toBe(0);
+    fireEvent.keyDown(document.body, { key: 'n' });
+    expect(lineButton('Stay a little longer')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.keyDown(document.body, { key: 'ArrowUp' });
+    expect(introRow()).toHaveAttribute('aria-pressed', 'true');
+    // The intro's "set & next" moves the first line's start too.
+    ctrl.now = 9.2;
+    await userEvent.click(screen.getByRole('button', { name: 'Set & next' }));
+    expect(latest[0]!.time).toBe(9.2);
+    await userEvent.click(introRow());
+    await userEvent.click(screen.getByRole('button', { name: 'Add a line after' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Line text' }), 'Oh{Enter}');
+    expect(latest.map((l) => l.text)).toEqual(['Oh', 'Stay a little longer', 'The harbour falls asleep behind us', 'You already know how it ends']);
+  });
+});
+
+describe('watching the lyrics', () => {
+  it('shows only the stage in full screen, until Escape or the button', async () => {
+    render(<Editable ctrl={new FakeAudio()} />);
+    const stage = document.querySelector('.stage-card')!;
+    await userEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(stage).toHaveClass('stage-card--focus');
+    expect(document.documentElement).toHaveClass('no-scroll');
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(stage).not.toHaveClass('stage-card--focus');
+    expect(document.documentElement).not.toHaveClass('no-scroll');
+    await userEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Exit full screen' }));
+    expect(stage).not.toHaveClass('stage-card--focus');
+  });
+
+  it('keeps play/pause at hand in a mini player while the stage is out of view', async () => {
+    let report: (visible: boolean) => void = () => {};
+    class FakeObserver {
+      constructor(cb: (entries: { isIntersecting: boolean }[]) => void) {
+        report = (visible) => cb([{ isIntersecting: visible }]);
+      }
+      observe() {}
+      disconnect() {}
+    }
+    const original = window.IntersectionObserver;
+    window.IntersectionObserver = FakeObserver as unknown as typeof IntersectionObserver;
+    try {
+      const ctrl = new FakeAudio();
+      render(<Editable ctrl={ctrl} />);
+      expect(screen.queryByRole('region', { name: 'Player' })).not.toBeInTheDocument();
+      act(() => report(false)); // scrolled down to the lines
+      const mini = screen.getByRole('region', { name: 'Player' });
+      await userEvent.click(within(mini).getByRole('button', { name: 'Play' }));
+      expect(ctrl.playing).toBe(true);
+      await userEvent.click(within(mini).getByRole('button', { name: 'Pause' }));
+      expect(ctrl.playing).toBe(false);
+      act(() => report(true));
+      expect(screen.queryByRole('region', { name: 'Player' })).not.toBeInTheDocument();
+    } finally {
+      window.IntersectionObserver = original;
+    }
   });
 });
