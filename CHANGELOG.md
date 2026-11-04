@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- On phones, every tap drew the browser's square highlight: it is gone, taps get the
+  app's own rounded feedback, focus outlines only show for the keyboard, and taps
+  answer at once (no double-tap zoom delay, no text selection on a long press).
+
 ## [0.4.0] — 2026-11-04
 
 ### Changed
