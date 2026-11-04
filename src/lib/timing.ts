@@ -1,3 +1,4 @@
+import { RELIABLE } from './confidence';
 import { roundCs } from './time';
 import type { LyricLine } from './types';
 
@@ -106,6 +107,16 @@ export function pauseAfter(lines: readonly LyricLine[], index: number): number |
   if (!line || line.time === null || line.end === undefined || line.end <= line.time) return null;
   const next = lines[nextTimedIndex(lines, index)];
   return next && next.time! <= line.end + 0.01 ? null : line.end;
+}
+
+/**
+ * Keeps an automatic pause only where both the line and the next one are reliable
+ * (confidence ≥ `min`): a pause after a misplaced line would blank the display while it
+ * is still being sung. Lines without a confidence (timed by hand) count as reliable.
+ */
+export function dropUncertainPauses(lines: LyricLine[], min = RELIABLE): LyricLine[] {
+  const sure = (l: LyricLine | undefined) => !l || (l.time !== null && (l.confidence ?? 1) >= min && !l.estimated);
+  return lines.map((l, i) => (l.end !== undefined && !(sure(l) && sure(lines[i + 1])) ? { ...l, end: undefined } : l));
 }
 
 export function countUntimed(lines: readonly LyricLine[]): number {

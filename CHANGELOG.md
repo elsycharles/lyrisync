@@ -49,6 +49,14 @@ All notable changes to this project are documented here. The format follows
   the silence (its bar counting down to the next line) and no line is lit; rows show
   "⏸ 00:07.20", and the line tools can remove a pause. Pauses are exported as empty
   timed lines, the usual LRC way to blank the display, and read back on import.
+- Automatic pauses: where the isolated voice stops well before the next line (a
+  silence of 1.5 s or more), the line ends there, so instrumental breaks and the outro
+  show a blank instead of a line nobody sings. They are kept only between lines the
+  app is sure of (reliability ≥ 0.9). On JamendoLyrics, in maximum accuracy, 89 % of
+  these ends are within 0.5 s of the annotated line end and all within 1 s; line starts
+  are unchanged.
+- The benchmark measures line ends against JamendoLyrics' annotations, and
+  `--profile DIR` keeps the downloaded models between runs.
 - Vocal isolation with Spleeter 2-stems (ONNX, STFT/iSTFT in TypeScript) and a vocal
   gate so no line can start in an intro, solo or break.
 - Lyrics clean-up for Genius copies: page leftovers, repeat markers ("(x2)", "×3",

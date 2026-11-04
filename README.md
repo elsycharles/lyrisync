@@ -15,6 +15,7 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
 - **Vocal isolation.** The voice is separated from the music before alignment, so intros, solos and breaks cannot attract lyrics.
 - **Cross-check (maximum accuracy mode).** Whisper transcribes the track, and the lines it clearly heard anchor the alignment.
 - **Per-line reliability.** Each line gets a calibrated score. The few uncertain lines are marked "to check", and the badge shows the share of lines whose timing is certain.
+- **Pauses.** Where the voice stops well before the next line, the line ends there: instrumental breaks show a blank instead of a line nobody sings. This is only done between lines the app is sure of.
 - **Any lyrics format.** Lyrics pasted from Genius are cleaned up:
   - page leftovers are removed ("Contributors", "You might also like", "Embed");
   - section headers are dropped;
@@ -68,6 +69,7 @@ Measured with [scripts/bench-alignment.mjs](scripts/bench-alignment.mjs) on 12 s
 | Fast | 82.0 % | 85.5 % | 88.0 % | ~6 s |
 
 - **Precision when right:** the median error of correct lines is under 50 ms.
+- **Pauses (maximum accuracy):** 89 % of the line ends placed automatically are within 0.5 s of the annotated end, and all are within 1 s. About a third of the real silences of 1.5 s or more get one; elsewhere the line stays shown until the next one, as in most LRC files.
 - **Hip-hop, reggae and pop:** mostly 90–100 %.
 - **Where errors remain:**
   - heavily distorted rock vocals, where the acoustic model cannot read the letters;
@@ -135,11 +137,13 @@ node scripts/bench-alignment.mjs --data /path/to/jamendolyrics --gpu --pipeline 
 node scripts/fetch-lrclib.mjs ~/Music/test        # files named "Artist - Title.mp3"
 node scripts/bench-alignment.mjs --lrc-dir ~/Music/test --lang mg --gpu --pipeline max
 
-# Sweep alignment settings on cached model outputs
+# Sweep alignment settings on cached model outputs (--dump prints every line)
 node scripts/bench-alignment.mjs --data … --gpu --dtype fp16 --separate --sweep '{"blankPenalty":[1,2,3]}'
 ```
 
 `--pipeline` runs the production engine ([src/state/syncEngine.ts](src/state/syncEngine.ts)) end to end, and the script reports accuracy, flagging quality and time per stage. Change alignment settings only with this benchmark: the defaults in [src/lib/align/forced.ts](src/lib/align/forced.ts) come from it.
+
+With JamendoLyrics, which annotates line ends, it also scores the pauses: how many there are, how close each end is to the annotation, how many end more than 0.5 s early (the display blanks while the line is still sung), and how many real silences are found. In `--pipeline` mode this is shown for several reliability thresholds; `PAUSE_RELIABILITY` in the sync engine is chosen from it. Add `--profile DIR` to keep the downloaded models between runs.
 
 ## Deployment
 
