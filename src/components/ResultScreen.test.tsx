@@ -27,6 +27,8 @@ function setup(confidence: number | null) {
     onMetadataChange: vi.fn(),
     onExport: vi.fn(),
     onRestart: vi.fn(),
+    saveStatus: 'saved' as const,
+    onHistory: vi.fn(),
   };
   render(
     <I18nProvider lang="en">
@@ -62,6 +64,13 @@ describe('ResultScreen', () => {
     expect(props.onExport).toHaveBeenCalledOnce();
     // Everything is fixed here: there is no separate editor any more.
     expect(screen.queryByRole('button', { name: 'Adjust timing' })).not.toBeInTheDocument();
+  });
+
+  it('says the work is saved, and links to the history', async () => {
+    const props = setup(0.9);
+    expect(screen.getByText('✓ Saved in the history')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'History' }));
+    expect(props.onHistory).toHaveBeenCalledOnce();
   });
 
   it('edits track metadata', async () => {
@@ -112,6 +121,8 @@ function Editable({ ctrl, onExport = vi.fn() }: { ctrl: AudioController; onExpor
         onMetadataChange={(m) => dispatch({ type: 'metadata/set', metadata: m })}
         onExport={onExport}
         onRestart={vi.fn()}
+        saveStatus="saved"
+        onHistory={vi.fn()}
       />
     </I18nProvider>
   );

@@ -27,6 +27,7 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
   - "Previous" / "Next" (Backspace / N) move between lines, the music with them;
   - ±0.1 s / ±1 s nudges per line, a slower playback speed, and undo;
   - edit a line's text in place, add a line after it or delete it, or edit the whole file as .lrc text.
+- **Nothing is lost.** Every sync and every change is saved in the browser as it happens, so closing the page by mistake loses nothing. The history lists each project with all its versions: open one, go back to an older version, or delete what you no longer need. Nothing is ever deleted automatically.
 - **Private and free.** The audio never leaves the device. There is no backend, so there is no cost per use and no usage cap.
 - **Installable and offline.** It is a PWA. After the first run, the models and the app work without a connection.
 - **Interface in French and English**, with light and dark themes.
@@ -193,4 +194,4 @@ The project follows **Gitflow**. See [CONTRIBUTING.md](CONTRIBUTING.md) for the 
 
 ## Privacy
 
-Lyrics and audio are processed entirely in the browser and are never uploaded or stored. The only network requests are for the app itself, the ONNX Runtime binaries (jsDelivr) and the model weights (Hugging Face Hub). Supplying lyrics you have the right to use remains your responsibility.
+Lyrics and audio are processed entirely in the browser and are never uploaded. The history (projects, their audio and every version of the lines) is stored on the device only, in the browser's IndexedDB, and stays there until you delete it from the History screen; the app asks the browser to keep it (persistent storage). The only network requests are for the app itself, the ONNX Runtime binaries (jsDelivr) and the model weights (Hugging Face Hub). Supplying lyrics you have the right to use remains your responsibility.

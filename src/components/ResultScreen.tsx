@@ -6,6 +6,7 @@ import { mergeEditedLines } from '../lib/lineEdits';
 import { lrcForEditing, parseLrc } from '../lib/lrc';
 import { countUntimed, nextTimedIndex, previousTimedIndex } from '../lib/timing';
 import type { LrcMetadata, LyricLine } from '../lib/types';
+import type { SaveStatus } from '../state/useProjectHistory';
 import { ConfidenceChip } from './ConfidenceChip';
 import { DownloadIcon, UndoIcon } from './icons';
 import { LyricList, isToCheck } from './LyricList';
@@ -20,12 +21,15 @@ interface Props {
   metadata: LrcMetadata;
   ctrl: AudioController;
   canUndo: boolean;
-  onEdit: (lines: LyricLine[]) => void;
+  /** `kind` names an edit for the history when it is not a plain line edit. */
+  onEdit: (lines: LyricLine[], kind?: 'lrc-text') => void;
   onUndo: () => void;
   onMetadataChange: (patch: Partial<LrcMetadata>) => void;
   /** Exports the project, or `current` when the .lrc text has just been applied. */
   onExport: (current?: { lines: LyricLine[]; metadata: LrcMetadata }) => void;
   onRestart: () => void;
+  saveStatus: SaveStatus;
+  onHistory: () => void;
 }
 
 export function ResultScreen(props: Props) {
@@ -80,7 +84,7 @@ export function ResultScreen(props: Props) {
       return null;
     }
     const merged = mergeEditedLines(lines, parsed.lines);
-    if (merged.length !== lines.length || merged.some((l, i) => l !== lines[i])) props.onEdit(merged);
+    if (merged.length !== lines.length || merged.some((l, i) => l !== lines[i])) props.onEdit(merged, 'lrc-text');
     const tags = { title: parsed.metadata.title ?? '', artist: parsed.metadata.artist ?? '', album: parsed.metadata.album ?? '' };
     if (tags.title !== (metadata.title ?? '') || tags.artist !== (metadata.artist ?? '') || tags.album !== (metadata.album ?? '')) {
       props.onMetadataChange(tags);
@@ -193,7 +197,15 @@ export function ResultScreen(props: Props) {
             </div>
           </details>
 
-          <p className="hint hint--center">
+          {/* Not a live region: "saved" after every edit would be noise; a failure is announced. */}
+          <p className={`hint hint--center${props.saveStatus === 'error' ? ' hint--warn' : ''}`} role={props.saveStatus === 'error' ? 'alert' : undefined}>
+            {props.saveStatus === 'error' ? t.history.saveError : props.saveStatus === 'saved' ? `✓ ${t.history.saved}` : '\u00a0'}
+          </p>
+          <p className="hint hint--center summary__links">
+            <button type="button" className="btn-link" onClick={props.onHistory}>
+              {t.history.title}
+            </button>
+            <span aria-hidden="true">·</span>
             <button type="button" className="btn-link" onClick={props.onRestart}>
               {t.result.restart}
             </button>

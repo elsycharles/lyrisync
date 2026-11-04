@@ -1,12 +1,12 @@
 import { useTheme } from '../hooks/useTheme';
 import { useI18n } from '../i18n/useI18n';
-import { CheckIcon, MoonIcon, SunIcon } from './icons';
+import { CheckIcon, HistoryIcon, MoonIcon, SunIcon } from './icons';
 import { Logo } from './Logo';
 
 export type FlowStep = 0 | 1 | 2;
 
-
-export function TopBar({ step }: { step: FlowStep }) {
+/** `step` null: a screen outside the flow (the history), so no step is shown. */
+export function TopBar({ step, onHistory }: { step: FlowStep | null; onHistory?: () => void }) {
   const { t, lang, setLang } = useI18n();
   const { theme, toggle } = useTheme();
   // The button shows where it takes you: a moon in light mode, a sun in dark mode.
@@ -19,24 +19,35 @@ export function TopBar({ step }: { step: FlowStep }) {
       <div className="topbar__inner">
         <Logo />
 
-        <ol className="stepper" aria-label={t.app.stepper.label}>
-          {steps.map((label, i) => {
-            const state = i < step ? 'done' : i === step ? 'current' : 'todo';
-            return (
-              <li key={label} className={`stepper__item stepper__item--${state}`} aria-current={state === 'current' ? 'step' : undefined}>
-                <span className="stepper__dot" aria-hidden="true">
-                  {state === 'done' ? <CheckIcon size={12} /> : i + 1}
-                </span>
-                <span className="stepper__label">{label}</span>
-              </li>
-            );
-          })}
-        </ol>
-        <span className="stepper-compact" aria-hidden="true">
-          {t.app.stepper.stepOf(step + 1, steps.length)} · {steps[step]}
-        </span>
+        {step === null ? (
+          <span className="stepper" aria-hidden="true" />
+        ) : (
+          <>
+            <ol className="stepper" aria-label={t.app.stepper.label}>
+              {steps.map((label, i) => {
+                const state = i < step ? 'done' : i === step ? 'current' : 'todo';
+                return (
+                  <li key={label} className={`stepper__item stepper__item--${state}`} aria-current={state === 'current' ? 'step' : undefined}>
+                    <span className="stepper__dot" aria-hidden="true">
+                      {state === 'done' ? <CheckIcon size={12} /> : i + 1}
+                    </span>
+                    <span className="stepper__label">{label}</span>
+                  </li>
+                );
+              })}
+            </ol>
+            <span className="stepper-compact" aria-hidden="true">
+              {t.app.stepper.stepOf(step + 1, steps.length)} · {steps[step]}
+            </span>
+          </>
+        )}
 
         <div className="topbar__controls">
+          {onHistory && (
+            <button type="button" className="icon-btn" onClick={onHistory} aria-label={t.history.title} title={t.history.title}>
+              <HistoryIcon />
+            </button>
+          )}
           <button
             type="button"
             className="icon-btn"

@@ -183,3 +183,21 @@ export function TrashIcon({ size = 16, className }: IconProps) {
     </svg>
   );
 }
+
+export function HistoryIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M2.6 8a5.4 5.4 0 1 0 1.6-3.8" />
+      <path d="M2.4 2.6v2.6h2.6" />
+      <path d="M8 5.2V8l2 1.4" />
+    </svg>
+  );
+}
+
+export function BackIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M10 3.5 5.5 8l4.5 4.5" />
+    </svg>
+  );
+}
