@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-11-04
+
 ### Changed
 
 - Sync is now **forced alignment** instead of transcription + text matching: the
@@ -107,4 +109,6 @@ First MVP release.
 - Installable PWA that works offline after the first run.
 - COOP/COEP headers for Cloudflare Pages and Netlify.
 
+[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.2.0...develop
+[0.2.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.2.0
 [0.1.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.1.0
