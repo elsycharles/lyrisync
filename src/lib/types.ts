@@ -14,11 +14,6 @@ export interface LyricLine {
   confidence?: number;
   /** Placed between its neighbours because nothing in it could be aligned. */
   estimated?: boolean;
-  /**
-   * When the line stops being sung, if that is before the next line starts: a pause
-   * (silence, an instrumental break). Without it a line lasts until the next one.
-   */
-  end?: number;
 }
 
 export interface LrcMetadata {

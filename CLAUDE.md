@@ -15,14 +15,14 @@ Lyrics + audio → `.lrc`, fully in the browser (React 18 + Vite + TS). Sync = v
 npm run typecheck && npm run lint && npm test && npm run build && npm run test:e2e
 ```
 
-Alignment changes also need the benchmark (see README "Benchmark"): `node scripts/bench-alignment.mjs --data <jamendolyrics> --gpu --pipeline max`. Baseline: 90.0 % of lines ≤ 0.5 s (max), 85.5 % (fast). Pauses at `PAUSE_RELIABILITY` 0.9: 19 (max) / 12 (fast), ~90 % of ends ≤ 0.5 s, none early. Never change `FORCED_DEFAULTS` (src/lib/align/forced.ts) without it; add `--profile <dir>` to keep the models between runs.
+Alignment changes also need the benchmark (see README "Benchmark"): `node scripts/bench-alignment.mjs --data <jamendolyrics> --gpu --pipeline max`. Baseline: 90.0 % of lines ≤ 0.5 s (max), 85.5 % (fast). Never change `FORCED_DEFAULTS` (src/lib/align/forced.ts) without it; add `--profile <dir>` to keep the models between runs.
 
 ## Architecture rules
 
 - `src/lib/` is pure and unit-tested; keep React and DOM out of it.
 - `src/state/syncEngine.ts` is the one sync pipeline; the React hook and the benchmark both call it.
 - Every line gets a time from forced alignment. Lines with nothing alignable are interpolated and marked `estimated`; uncertain ones (reliability < `RELIABLE`) are shown "to check". The reliability mapping in `lineReliability` is calibrated on the benchmark.
-- A line may have an `end`: a pause before the next line, set by hand ("Pause ici") or found where the isolated voice stops (`pauseMin` etc. in `FORCED_DEFAULTS`). Automatic ones are kept only between lines with reliability ≥ `PAUSE_RELIABILITY` (syncEngine): after a misplaced line a pause would blank the display while it is sung. In `.lrc` a pause is an empty timed line.
+- One screen reviews and fixes (ResultScreen + LyricList + LineTools); there is no separate editor and no manual-timing mode. A line has a start only: it lasts until the next one (no pauses, by the user's choice). "Caler et suivante" sets the next line's start at the playhead.
 - MMS input is normalised over the whole track, never per window (silence would be blown up into "letters").
 - Whisper: always pass an explicit language (`resolveLanguage`; with none, transformers.js translates to English). It listens to the mix, not the isolated vocals (separation artefacts hurt it). Its timestamps run ~0.14 s late (`WHISPER_LATENCY`).
 - On WebGPU, MMS stays fp16 (q4 costs ~5 points). On WASM keep fp32 encoders for Whisper tiny/base (`dtypesFor`): q8 encoders loop on music.

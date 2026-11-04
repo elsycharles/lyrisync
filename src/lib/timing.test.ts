@@ -2,17 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   activeLineIndex,
   countUntimed,
-  dropUncertainPauses,
-  endAndStartNext,
-  endWithPause,
   fillMissingTimes,
-  lastStartedIndex,
   nextTimedIndex,
   nudgeLine,
-  pauseAfter,
+  outOfOrderIds,
   previousTimedIndex,
-  removePause,
   shiftLines,
+  startNextAt,
 } from './timing';
 import type { LyricLine } from './types';
 
@@ -100,85 +96,20 @@ describe('previousTimedIndex / nextTimedIndex', () => {
   });
 });
 
-describe('line ends and pauses', () => {
-  const withEnds = (): LyricLine[] => [
-    { id: 'a', text: 'a', time: 10, source: 'auto' },
-    { id: 'b', text: 'b', time: 14, source: 'auto', end: 16 },
-    { id: 'c', text: 'c', time: 22, source: 'auto' },
-  ];
-
-  it('shows no active line during a pause, but knows which line was last', () => {
-    const lines = withEnds();
-    expect(activeLineIndex(lines, 15)).toBe(1);
-    expect(activeLineIndex(lines, 18)).toBe(-1);
-    expect(lastStartedIndex(lines, 18)).toBe(1);
-    expect(activeLineIndex(lines, 23)).toBe(2);
+describe('"set & next"', () => {
+  it('gives the next line its start, and nothing after the last line', () => {
+    const lines = mk([10, 14, null]);
+    const out = startNextAt(lines, 0, 13.456);
+    expect(out[0]).toBe(lines[0]);
+    expect(out[1]).toMatchObject({ time: 13.46, source: 'manual' });
+    // An untimed line gets its start the same way.
+    expect(startNextAt(lines, 1, 18.9)[2]).toMatchObject({ time: 18.9, source: 'manual' });
+    expect(startNextAt(lines, 2, 25)).toBe(lines);
+    expect(startNextAt(lines, -1, 5)).toBe(lines);
   });
 
-  it('"set & next" ends the line and starts the next one at the same moment', () => {
-    const out = endAndStartNext(withEnds(), 0, 13.456);
-    expect(out[0]).toMatchObject({ time: 10, end: undefined });
-    expect(out[1]).toMatchObject({ time: 13.46, end: 16, source: 'manual' });
-    // On the last line it only ends it.
-    expect(endAndStartNext(withEnds(), 2, 25)[2]).toMatchObject({ time: 22, end: 25 });
-  });
-
-  it('a pause ends the line and leaves the next start alone', () => {
-    const out = endWithPause(withEnds(), 0, 12.5);
-    expect(out[0]).toMatchObject({ time: 10, end: 12.5 });
-    expect(out[1]!.time).toBe(14);
-    expect(pauseAfter(out, 0)).toBe(12.5);
-    // The next line cannot start inside the silence: it waits for the end of it…
-    const tight = endWithPause(withEnds(), 0, 15);
-    expect(tight[0]!.end).toBe(15);
-    expect(tight[1]!.time).toBe(15);
-    expect(pauseAfter(tight, 0)).toBeNull();
-    // …and the pause shows once that line gets its real start.
-    expect(pauseAfter(nudgeLine(tight, 'b', 2), 0)).toBe(15);
-    // Ending a line before it starts, or an untimed one, does nothing.
-    expect(endWithPause(withEnds(), 2, 20)).toEqual(withEnds());
-    const untimed: LyricLine[] = [{ id: 'x', text: 'x', time: null, source: null }];
-    expect(endWithPause(untimed, 0, 3)).toBe(untimed);
-  });
-
-  it('finds and removes pauses', () => {
-    const lines = withEnds();
-    expect(lines.map((_, i) => pauseAfter(lines, i))).toEqual([null, 16, null]);
-    // The last line can end too: the outro.
-    expect(pauseAfter(endAndStartNext(lines, 2, 25), 2)).toBe(25);
-    const removed = removePause(lines, 'b');
-    expect(removed[1]).toMatchObject({ time: 14, end: undefined, source: 'manual' });
-    expect(pauseAfter(removed, 1)).toBeNull();
-    expect(removePause(lines, 'a')[0]).toBe(lines[0]);
-  });
-
-  it('keeps automatic pauses only between reliable lines', () => {
-    const auto = (id: string, time: number, confidence: number, end?: number): LyricLine => ({
-      id,
-      text: id,
-      time,
-      source: 'auto',
-      confidence,
-      ...(end !== undefined ? { end } : {}),
-    });
-    const lines = [auto('a', 10, 0.99, 12), auto('b', 15, 0.99, 17), auto('c', 20, 0.6, 22), auto('d', 25, 0.99, 27)];
-    expect(dropUncertainPauses(lines, 0.9).map((l) => l.end)).toEqual([
-      12, // both sure
-      undefined, // the next line is uncertain
-      undefined, // the line itself is uncertain
-      27, // the last line: only itself counts
-    ]);
-    // An estimated next line is never sure; lines timed by hand have no confidence and are.
-    const estimated = [auto('a', 10, 0.99, 12), { ...auto('b', 15, 0.3), estimated: true }];
-    expect(dropUncertainPauses(estimated, 0.9)[0]!.end).toBeUndefined();
-    const manual: LyricLine[] = [{ id: 'm', text: 'm', time: 3, source: 'manual', end: 4 }, auto('n', 8, 0.99)];
-    expect(dropUncertainPauses(manual, 0.9)[0]!.end).toBe(4);
-  });
-
-  it('nudging a start keeps the end unless it would come first; shifting moves both', () => {
-    const lines = withEnds();
-    expect(nudgeLine(lines, 'b', 1)[1]).toMatchObject({ time: 15, end: 16 });
-    expect(nudgeLine(lines, 'b', 3)[1]).toMatchObject({ time: 17, end: undefined });
-    expect(shiftLines(lines, new Set(['b']), -1)[1]).toMatchObject({ time: 13, end: 15 });
+  it('flags lines timed before an earlier one', () => {
+    expect([...outOfOrderIds(mk([10, 8, 12, 11, null]))]).toEqual(['l1', 'l3']);
+    expect(outOfOrderIds(mk([1, 2, 3])).size).toBe(0);
   });
 });

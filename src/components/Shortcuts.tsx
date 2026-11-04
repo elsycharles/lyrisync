@@ -29,8 +29,7 @@ export function modKey(ctrlLabel: string): string {
 }
 
 /**
- * The selected line's keys (see useLineEditing), in the order of a timing pass. Shared by
- * the adjustment editor and the result list so both legends stay the same.
+ * The selected line's keys (see useLineEditing), in the order of a timing pass.
  */
 export function lineShortcuts(t: Messages, extra: Shortcut[] = []): Shortcut[] {
   const s = t.result.shortcuts;
@@ -39,8 +38,6 @@ export function lineShortcuts(t: Messages, extra: Shortcut[] = []): Shortcut[] {
     { keys: ['↑', '↓'], label: s.pick },
     { keys: ['←', '→'], label: s.nudge },
     { keys: [t.result.keys.enter], label: s.listen },
-    { keys: ['S'], label: s.start },
-    { keys: ['P'], label: s.pause },
     { keys: ['C'], label: s.endNext },
     { keys: ['⌫'], label: s.previous },
     { keys: ['N'], label: s.next },

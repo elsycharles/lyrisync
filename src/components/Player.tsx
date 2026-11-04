@@ -14,11 +14,10 @@ interface Props {
   /** When given, ⏮ / ⏭ buttons around play/pause take the music to the previous / next line. */
   onPrevLine?: () => void;
   onNextLine?: () => void;
-  /** 'track' shows the title and m:ss times; 'clock' shows a precise clock and a speed control. */
-  variant?: 'track' | 'clock';
 }
 
-export function Player({ ctrl, title, subtitle, variant = 'track', onPrevLine, onNextLine }: Props) {
+/** Play/pause, ⏮ / ⏭, the m:ss position, a speed control (slower helps on fast passages) and the scrubber. */
+export function Player({ ctrl, title, subtitle, onPrevLine, onNextLine }: Props) {
   const { t } = useI18n();
   const playing = usePlaying(ctrl);
   const duration = useDuration(ctrl);
@@ -26,7 +25,7 @@ export function Player({ ctrl, title, subtitle, variant = 'track', onPrevLine, o
   const clockRef = useRef<HTMLSpanElement>(null);
   const scrubRef = useRef<HTMLInputElement>(null);
 
-  useClockRef(ctrl, clockRef, variant === 'clock' ? undefined : formatDuration);
+  useClockRef(ctrl, clockRef, formatDuration);
 
   // The scrubber follows the playhead through the DOM, not through React state.
   useEffect(() => {
@@ -74,33 +73,24 @@ export function Player({ ctrl, title, subtitle, variant = 'track', onPrevLine, o
             <NextLineIcon />
           </button>
         )}
-        {variant === 'clock' ? (
-          <>
-            <span className="clock" ref={clockRef} aria-label={t.player.position} />
-            <span className="times">{hasDuration ? formatDuration(duration) : ''}</span>
-            <button
-              type="button"
-              className="speed"
-              onClick={() => ctrl.setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length]!)}
-              aria-label={t.player.speed(rate)}
-              title={t.player.speedHint}
-            >
-              {rate}×
-            </button>
-          </>
-        ) : (
-          <>
-            {(title || subtitle) && (
-              <span className="track-text">
-                {title && <span className="track-title">{title}</span>}
-                {subtitle && <span className="track-artist">{subtitle}</span>}
-              </span>
-            )}
-            <span className="times">
-              <span ref={clockRef} /> / {hasDuration ? formatDuration(duration) : '–:––'}
-            </span>
-          </>
+        {(title || subtitle) && (
+          <span className="track-text">
+            {title && <span className="track-title">{title}</span>}
+            {subtitle && <span className="track-artist">{subtitle}</span>}
+          </span>
         )}
+        <span className="times">
+          <span ref={clockRef} /> / {hasDuration ? formatDuration(duration) : '–:––'}
+        </span>
+        <button
+          type="button"
+          className="speed"
+          onClick={() => ctrl.setRate(RATES[(RATES.indexOf(rate) + 1) % RATES.length]!)}
+          aria-label={t.player.speed(rate)}
+          title={t.player.speedHint}
+        >
+          {rate}×
+        </button>
       </div>
       <input
         ref={scrubRef}

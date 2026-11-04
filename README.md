@@ -15,7 +15,6 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
 - **Vocal isolation.** The voice is separated from the music before alignment, so intros, solos and breaks cannot attract lyrics.
 - **Cross-check (maximum accuracy mode).** Whisper transcribes the track, and the lines it clearly heard anchor the alignment.
 - **Per-line reliability.** Each line gets a calibrated score. The few uncertain lines are marked "to check", and the badge shows the share of lines whose timing is certain.
-- **Pauses.** Where the voice stops well before the next line, the line ends there: instrumental breaks show a blank instead of a line nobody sings. This is only done between lines the app is sure of.
 - **Any lyrics format.** Lyrics pasted from Genius are cleaned up:
   - page leftovers are removed ("Contributors", "You might also like", "Embed");
   - section headers are dropped;
@@ -23,13 +22,10 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
   - inline ad-libs in parentheses are made optional;
   - numbers are spelled out ("le 9" → "le neuf");
   - Arabizi is read ("ga3ma"), and look-alike Cyrillic letters are fixed.
-- **Editor for the last touches.** Fix lines while the music plays, on the result screen or in the editor:
-  - "Set & next" (C) as a line finishes: it ends there and the next one starts at that moment;
-  - "Pause here" (P) for a silence before the next line, "Start here" (S) for a line's start;
+- **One screen to check and fix.** Listen with the lyrics on screen, then fix lines in place while the music plays:
+  - "Set & next" (C) as a line finishes: the next one starts at that moment;
   - "Previous" / "Next" (Backspace / N) move between lines, the music with them;
-  - ±0.1 s / ±1 s nudges, tap-to-sync, batch shift of ticked lines, and `.lrc` import.
-
-  Pauses are written as empty timed lines, which LRC players show as a blank, and are read back on import.
+  - ±0.1 s / ±1 s nudges per line, "Shift every line" for a track that is early or late throughout, a slower playback speed, and undo.
 - **Private and free.** The audio never leaves the device. There is no backend, so there is no cost per use and no usage cap.
 - **Installable and offline.** It is a PWA. After the first run, the models and the app work without a connection.
 - **Interface in French and English**, with light and dark themes.
@@ -51,7 +47,7 @@ lyrics ─► Genius clean-up ─► romanised letters (a–z, ')
             + vocal gate                   (no letters where the isolated voice is silent)
             + soft anchors on Whisper      (lines it clearly heard)
                                      ▼
-          one timestamp per line + calibrated reliability ─► player ─► editor ─► .lrc
+          one timestamp per line + calibrated reliability ─► review (listen, fix) ─► .lrc
 ```
 
 - **Acoustic model:** Meta's MMS (`onnx-community/mms-300m-1130-forced-aligner-ONNX`). It was trained for forced alignment over 1130 languages, Malagasy included, on romanised text.
@@ -69,7 +65,6 @@ Measured with [scripts/bench-alignment.mjs](scripts/bench-alignment.mjs) on 12 s
 | Fast | 82.0 % | 85.5 % | 88.0 % | ~6 s |
 
 - **Precision when right:** the median error of correct lines is under 50 ms.
-- **Pauses (maximum accuracy):** 89 % of the line ends placed automatically are within 0.5 s of the annotated end, and all are within 1 s. About a third of the real silences of 1.5 s or more get one; elsewhere the line stays shown until the next one, as in most LRC files.
 - **Hip-hop, reggae and pop:** mostly 90–100 %.
 - **Where errors remain:**
   - heavily distorted rock vocals, where the acoustic model cannot read the letters;
@@ -137,13 +132,13 @@ node scripts/bench-alignment.mjs --data /path/to/jamendolyrics --gpu --pipeline 
 node scripts/fetch-lrclib.mjs ~/Music/test        # files named "Artist - Title.mp3"
 node scripts/bench-alignment.mjs --lrc-dir ~/Music/test --lang mg --gpu --pipeline max
 
-# Sweep alignment settings on cached model outputs (--dump prints every line)
+# Sweep alignment settings on cached model outputs
 node scripts/bench-alignment.mjs --data … --gpu --dtype fp16 --separate --sweep '{"blankPenalty":[1,2,3]}'
 ```
 
 `--pipeline` runs the production engine ([src/state/syncEngine.ts](src/state/syncEngine.ts)) end to end, and the script reports accuracy, flagging quality and time per stage. Change alignment settings only with this benchmark: the defaults in [src/lib/align/forced.ts](src/lib/align/forced.ts) come from it.
 
-With JamendoLyrics, which annotates line ends, it also scores the pauses: how many there are, how close each end is to the annotation, how many end more than 0.5 s early (the display blanks while the line is still sung), and how many real silences are found. In `--pipeline` mode this is shown for several reliability thresholds; `PAUSE_RELIABILITY` in the sync engine is chosen from it. Add `--profile DIR` to keep the downloaded models between runs.
+Add `--profile DIR` to keep the downloaded models between runs.
 
 ## Deployment
 
@@ -174,7 +169,7 @@ src/
   worker/           acoustic worker (Spleeter + MMS + alignment), Whisper worker, clients
   state/            sync engine, project reducer (with undo), settings
   audio/            AudioController (shared <audio>, rAF playhead) and hooks
-  components/       screens: import, processing, result, editor (tap + adjust)
+  components/       screens: import, processing, review (with the line tools)
   i18n/             French (source) and English strings
 bench/              dev-only harness page for the benchmark
 scripts/            benchmark and LRCLIB fetcher

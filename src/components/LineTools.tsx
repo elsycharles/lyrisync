@@ -1,40 +1,32 @@
 import type { AudioController } from '../audio/AudioController';
 import { useI18n } from '../i18n/useI18n';
 import { formatTimestamp } from '../lib/time';
-import { lastStartedIndex, previousTimedIndex } from '../lib/timing';
+import { activeLineIndex, previousTimedIndex } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
-import { CloseIcon, NextLineIcon, PauseIcon, PlayIcon, PrevLineIcon, StartIcon, TargetIcon } from './icons';
+import { NextLineIcon, PlayIcon, PrevLineIcon, TargetIcon } from './icons';
 
 const NUDGES_BEFORE = [-1, -0.1];
 const NUDGES_AFTER = [0.1, 1];
 
 interface Props {
   line: LyricLine;
-  /** End of the line when a silence follows it (see pauseAfter), else null. */
-  pause: number | null;
+  isFirst: boolean;
+  isLast: boolean;
   onNudge: (delta: number) => void;
-  /** The line starts at the playhead. */
-  onSetStart: () => void;
-  /** The line ends at the playhead, silence until the next one; selects the next line. */
-  onPause: () => void;
-  /** The line ends at the playhead and the next one starts there; selects the next line. */
+  /** The next line starts at the playhead (pressed as this one finishes); selects it. */
   onSetNext: () => void;
-  onRemovePause: () => void;
   onPlay: () => void;
   /** Selects the previous line and takes the music back to it. */
   onPrevious: () => void;
   /** Selects the next line, sets nothing, and takes the music to it. */
   onNext: () => void;
-  onClear?: () => void;
 }
 
 /**
- * The tools of the selected line. Top: its start (nudge ±0.1 s / ±1 s) and moving between
- * lines with the music. Bottom: timing from the playhead — start here, pause here, and
- * "set & next", pressed as the line finishes.
+ * The tools of the selected line: its start with ±0.1 s / ±1 s nudges, then moving
+ * between lines with the music, and "set & next", pressed as the line finishes.
  */
-export function LineTools(props: Props) {
-  const { line, pause, onNudge } = props;
+export function LineTools({ line, isFirst, isLast, onNudge, onSetNext, onPlay, onPrevious, onNext }: Props) {
   const { t } = useI18n();
   const untimed = line.time === null;
   const nudgeButton = (d: number) => (
@@ -45,52 +37,26 @@ export function LineTools(props: Props) {
 
   return (
     <div className="line-tools" role="group" aria-label={t.editor.selected}>
-      <div className="line-tools__row">
-        <div className="line-tools__nudge">
-          {NUDGES_BEFORE.map(nudgeButton)}
-          <output className="line-tools__time" aria-label={t.editor.selected}>
-            {untimed ? '—' : formatTimestamp(line.time!)}
-          </output>
-          {NUDGES_AFTER.map(nudgeButton)}
-        </div>
-        <div className="line-tools__group">
-          <button type="button" className="tool-btn" onClick={props.onPrevious} title={t.editor.previousHint}>
-            <PrevLineIcon size={13} /> {t.editor.previous}
-          </button>
-          <button type="button" className="tool-btn" onClick={props.onPlay} disabled={untimed} title={t.editor.playFrom}>
-            <PlayIcon size={13} /> {t.editor.listen}
-          </button>
-          <button type="button" className="tool-btn" onClick={props.onNext} title={t.editor.nextHint}>
-            {t.editor.next} <NextLineIcon size={13} />
-          </button>
-        </div>
+      <div className="line-tools__nudge">
+        {NUDGES_BEFORE.map(nudgeButton)}
+        <output className="line-tools__time" aria-label={t.editor.selected}>
+          {untimed ? '—' : formatTimestamp(line.time!)}
+        </output>
+        {NUDGES_AFTER.map(nudgeButton)}
       </div>
-      <div className="line-tools__row">
-        <div className="line-tools__group">
-          <button type="button" className="tool-btn" onClick={props.onSetStart} title={t.editor.setStartHint}>
-            <StartIcon size={13} /> {t.editor.setStart}
-          </button>
-          <button type="button" className="tool-btn" onClick={props.onPause} disabled={untimed} title={t.editor.pauseHint}>
-            <PauseIcon size={13} /> {t.editor.pauseHere}
-          </button>
-          <button type="button" className="tool-btn tool-btn--main" onClick={props.onSetNext} title={t.editor.setNextHint}>
-            <TargetIcon size={14} /> {t.editor.setNext}
-          </button>
-        </div>
-        {(pause !== null || props.onClear) && (
-          <div className="line-tools__group">
-            {pause !== null && (
-              <button type="button" className="tool-btn" onClick={props.onRemovePause} title={t.editor.endsAt(formatTimestamp(pause))}>
-                <CloseIcon size={13} /> {t.editor.removePause}
-              </button>
-            )}
-            {props.onClear && (
-              <button type="button" className="tool-btn" onClick={props.onClear} disabled={untimed}>
-                <CloseIcon size={13} /> {t.editor.clear}
-              </button>
-            )}
-          </div>
-        )}
+      <div className="line-tools__group">
+        <button type="button" className="tool-btn" onClick={onPrevious} disabled={isFirst} title={t.editor.previousHint}>
+          <PrevLineIcon size={13} /> {t.editor.previous}
+        </button>
+        <button type="button" className="tool-btn" onClick={onPlay} disabled={untimed} title={t.editor.playFrom}>
+          <PlayIcon size={13} /> {t.editor.listen}
+        </button>
+        <button type="button" className="tool-btn" onClick={onNext} disabled={isLast} title={t.editor.nextHint}>
+          {t.editor.next} <NextLineIcon size={13} />
+        </button>
+        <button type="button" className="tool-btn tool-btn--main" onClick={onSetNext} disabled={isLast} title={t.editor.setNextHint}>
+          <TargetIcon size={14} /> {t.editor.setNext}
+        </button>
       </div>
     </div>
   );
@@ -102,10 +68,9 @@ export const PLAY_LEAD_IN = 0.5;
 /**
  * The line the music is on, counting a line as started during its lead-in: right after
  * a jump to line i (playhead at its start minus the lead-in), "previous" means i − 1.
- * During a pause it is the line before the pause.
  */
 export function currentLineIndex(lines: readonly LyricLine[], ctrl: AudioController): number {
-  return lastStartedIndex(lines, ctrl.currentTime() + PLAY_LEAD_IN + 0.05);
+  return activeLineIndex(lines, ctrl.currentTime() + PLAY_LEAD_IN + 0.05);
 }
 
 /** Takes the music to just before `line` and plays. */
@@ -118,8 +83,8 @@ export function playLine(ctrl: AudioController, line: LyricLine): void {
 /**
  * The line before or after `from` for the line tools' Previous / Next, and where the music
  * goes. Back: to the line above, the music to it — or, when it has no time yet, to the
- * closest timed line before it, so its start can be heard and set. On: to the line below,
- * the music to it when it has a time; otherwise the music keeps playing.
+ * closest timed line before it, so the line before can be heard and "set & next" pressed.
+ * On: to the line below, the music to it when it has a time; otherwise it keeps playing.
  */
 export function stepLine(
   lines: readonly LyricLine[],

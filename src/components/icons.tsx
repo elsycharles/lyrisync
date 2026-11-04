@@ -93,16 +93,6 @@ export function DownloadIcon({ size = 16, className }: IconProps) {
   );
 }
 
-export function SlidersIcon({ size = 16, className }: IconProps) {
-  return (
-    <svg {...base(size)} className={className}>
-      <path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" />
-      <circle cx="10" cy="4.5" r="1.5" />
-      <circle cx="6" cy="11.5" r="1.5" />
-    </svg>
-  );
-}
-
 export function ChipIcon({ size = 16, className }: IconProps) {
   return (
     <svg {...base(size)} className={className}>
@@ -126,14 +116,6 @@ export function PlayIcon({ size = 16, className }: IconProps) {
   return (
     <svg {...base(size)} className={className}>
       <path d="M5 3.2v9.6L12.6 8Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-export function CloseIcon({ size = 16, className }: IconProps) {
-  return (
-    <svg {...base(size)} className={className}>
-      <path d="M4 4l8 8M12 4l-8 8" />
     </svg>
   );
 }
@@ -170,24 +152,6 @@ export function NextLineIcon({ size = 16, className }: IconProps) {
     <svg {...base(size)} className={className}>
       <path d="M12.5 3v10" />
       <path d="M3.5 3.4v9.2L10.2 8Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-export function PauseIcon({ size = 16, className }: IconProps) {
-  return (
-    <svg {...base(size)} className={className}>
-      <rect x="4" y="3" width="2.6" height="10" rx="1" fill="currentColor" stroke="none" />
-      <rect x="9.4" y="3" width="2.6" height="10" rx="1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-export function StartIcon({ size = 16, className }: IconProps) {
-  return (
-    <svg {...base(size)} className={className}>
-      <path d="M3.5 2.5v11" />
-      <path d="M6.5 8h7M10.5 5l3 3-3 3" />
     </svg>
   );
 }

@@ -14,7 +14,6 @@ import { Transcriber } from '../src/worker/transcriber';
 import { alignLyrics } from '../src/lib/align/align';
 import { resample } from '../src/lib/audio/resample';
 import { runSync, type SyncMode } from '../src/state/syncEngine';
-import { dropUncertainPauses } from '../src/lib/timing';
 
 const worker = Comlink.wrap<CtcWorkerApi>(
   new Worker(new URL('../src/worker/ctc.worker.ts', import.meta.url), { type: 'module' }),
@@ -47,8 +46,7 @@ const bench = {
     let stage = '';
     const t0 = last;
     const r = await runSync(
-      // Every detected pause comes back; gatePauses applies the reliability rule after.
-      { audio: blob, lines: lines.map((text) => ({ id: createId(), text, time: null, source: null })), language, mode, pauseReliability: 0 },
+      { audio: blob, lines: lines.map((text) => ({ id: createId(), text, time: null, source: null })), language, mode },
       (p) => {
         if (p.stage === stage) return;
         const now = performance.now();
@@ -62,13 +60,8 @@ const bench = {
       ms: Math.round(performance.now() - t0),
       stages,
       confidence: r.confidence,
-      lines: r.lines.map((l) => ({ time: l.time, end: l.end ?? null, confidence: l.confidence ?? 0 })),
+      lines: r.lines.map((l) => ({ time: l.time, confidence: l.confidence ?? 0 })),
     };
-  },
-  /** The production rule that keeps a pause only between reliable lines, at threshold `min`. */
-  gatePauses(lines: { time: number | null; end: number | null; confidence: number }[], min: number) {
-    const full = lines.map((l) => ({ id: createId(), text: '', source: 'auto' as const, time: l.time, confidence: l.confidence, end: l.end ?? undefined }));
-    return dropUncertainPauses(full, min).map((l, i) => ({ ...lines[i]!, end: l.end ?? null }));
   },
   /** Debug: Whisper transcription + text alignment (the previous approach), on mix or vocals. */
   async whisper(url: string, lines: string[], language: 'fr' | 'en' | 'mg', model: 'tiny' | 'base' | 'small', vocalsOnly: boolean) {
@@ -129,7 +122,7 @@ const bench = {
     return {
       ms: Math.round(performance.now() - t0),
       confidence: r.confidence,
-      lines: r.lines.map((l) => ({ time: l.time, end: l.end ?? null, confidence: l.confidence ?? 0 })),
+      lines: r.lines.map((l) => ({ time: l.time, confidence: l.confidence ?? 0 })),
     };
   },
 };

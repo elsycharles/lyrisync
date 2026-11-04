@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { AudioController } from './audio/AudioController';
-import { EditorScreen } from './components/EditorScreen';
 import { ImportScreen } from './components/ImportScreen';
 import { ProcessingScreen } from './components/ProcessingScreen';
 import { ResultScreen } from './components/ResultScreen';
@@ -16,7 +15,7 @@ import { initialProject, projectReducer } from './state/project';
 import { resolveLanguage, useSettings } from './state/settings';
 import { useSyncPipeline } from './state/useSyncPipeline';
 
-export type Screen = 'import' | 'processing' | 'result' | 'editor';
+export type Screen = 'import' | 'processing' | 'result';
 
 export function App() {
   const { t, lang } = useI18n();
@@ -74,12 +73,6 @@ export function App() {
     }
   }, [lang, pipeline, project.audio, project.lyricsText, settings]);
 
-  const startManual = useCallback(() => {
-    pipeline.reset();
-    dispatch({ type: 'lines/replace', lines: parseLyrics(project.lyricsText), confidence: null });
-    setScreen('editor');
-  }, [pipeline, project.lyricsText]);
-
   const exportLrc = useCallback(() => {
     const lines = fillMissingTimes(project.lines, project.audio?.duration ?? undefined);
     const text = serializeLrc(lines, { metadata: project.metadata, tool: `LyriSync ${__APP_VERSION__}` });
@@ -94,10 +87,12 @@ export function App() {
     setScreen('import');
   }, [ctrl, hasWork, pipeline, t]);
 
+  // A pasted or imported .lrc already has its timings: straight to the review screen.
   const openLrcText = useCallback(() => {
+    if (!project.audio) return;
     const { lines, metadata } = parseLrc(project.lyricsText);
     dispatch({ type: 'lines/replace', lines, confidence: null, metadata });
-    setScreen(project.audio ? 'editor' : 'import');
+    setScreen('result');
   }, [project.audio, project.lyricsText]);
 
   const flowStep: FlowStep = screen === 'import' ? 0 : screen === 'processing' ? 1 : 2;
@@ -116,7 +111,6 @@ export function App() {
             onSettingsChange={updateSettings}
             device={device}
             onSync={startSync}
-            onManual={startManual}
             onOpenLrc={openLrcText}
           />
         )}
@@ -132,7 +126,6 @@ export function App() {
               pipeline.reset();
               setScreen('import');
             }}
-            onManual={startManual}
           />
         )}
         {screen === 'result' && (
@@ -145,20 +138,8 @@ export function App() {
             onEdit={(lines) => dispatch({ type: 'lines/edit', lines })}
             onUndo={() => dispatch({ type: 'lines/undo' })}
             onMetadataChange={(metadata) => dispatch({ type: 'metadata/set', metadata })}
-            onFixTiming={() => setScreen('editor')}
             onExport={exportLrc}
             onRestart={restart}
-          />
-        )}
-        {screen === 'editor' && (
-          <EditorScreen
-            lines={project.lines}
-            ctrl={ctrl}
-            canUndo={project.history.length > 0}
-            onEdit={(lines) => dispatch({ type: 'lines/edit', lines })}
-            onUndo={() => dispatch({ type: 'lines/undo' })}
-            onImport={(lines, metadata) => dispatch({ type: 'lines/replace', lines, confidence: null, metadata })}
-            onDone={() => setScreen('result')}
           />
         )}
       </main>

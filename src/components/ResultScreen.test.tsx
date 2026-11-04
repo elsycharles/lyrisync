@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useReducer } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -25,7 +25,6 @@ function setup(confidence: number | null) {
     onEdit: vi.fn(),
     onUndo: vi.fn(),
     onMetadataChange: vi.fn(),
-    onFixTiming: vi.fn(),
     onExport: vi.fn(),
     onRestart: vi.fn(),
   };
@@ -57,12 +56,12 @@ describe('ResultScreen', () => {
     expect(screen.queryByText(/Reliability/)).not.toBeInTheDocument();
   });
 
-  it('exports and opens the editor', async () => {
+  it('exports', async () => {
     const props = setup(0.9);
     await userEvent.click(screen.getByRole('button', { name: 'Export .lrc' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Adjust timing' }));
     expect(props.onExport).toHaveBeenCalledOnce();
-    expect(props.onFixTiming).toHaveBeenCalledOnce();
+    // Everything is fixed here: there is no separate editor any more.
+    expect(screen.queryByRole('button', { name: 'Adjust timing' })).not.toBeInTheDocument();
   });
 
   it('edits track metadata', async () => {
@@ -108,7 +107,6 @@ function Editable({ ctrl }: { ctrl: AudioController }) {
         onEdit={(l) => dispatch({ type: 'lines/edit', lines: l })}
         onUndo={() => dispatch({ type: 'lines/undo' })}
         onMetadataChange={vi.fn()}
-        onFixTiming={vi.fn()}
         onExport={vi.fn()}
         onRestart={vi.fn()}
       />
@@ -151,51 +149,43 @@ describe('fixing lines on the result screen', () => {
     ctrl.now = 18.903;
     await userEvent.click(screen.getByRole('button', { name: 'Set & next' }));
     expect(latest[2]).toMatchObject({ time: 18.9, source: 'manual' });
-    // On the last line it only ends it, and the selection is done.
-    ctrl.now = 22;
-    await userEvent.click(screen.getByRole('button', { name: 'Set & next' }));
-    expect(latest[2]).toMatchObject({ time: 18.9, end: 22 });
-    expect(screen.queryByRole('group', { name: 'Selected line' })).not.toBeInTheDocument();
+    // Nothing follows the last line.
+    expect(lineButton('You already know how it ends')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Set & next' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 
-  it('sets a start, adds a pause and removes it', async () => {
+  it('times an untimed line from the notice: the line before plays, then "set & next"', async () => {
     const ctrl = new FakeAudio();
     render(<Editable ctrl={ctrl} />);
-    await userEvent.click(lineButton('Stay a little longer'));
-    ctrl.now = 9.5;
-    await userEvent.click(screen.getByRole('button', { name: 'Start here' }));
-    expect(latest[0]).toMatchObject({ time: 9.5, source: 'manual' });
-    // "Pause here": the line ends now, silence until the next one, which keeps its start.
-    ctrl.now = 12.2;
-    await userEvent.click(screen.getByRole('button', { name: 'Pause here' }));
-    expect(latest[0]!.end).toBe(12.2);
-    expect(latest[1]!.time).toBe(14.25);
+    await userEvent.click(screen.getByRole('button', { name: 'Time them now' }));
     expect(lineButton('The harbour falls asleep behind us')).toHaveAttribute('aria-pressed', 'true');
-    expect(within(lineButton('Stay a little longer')).getByText('pause at 00:12.20')).toBeInTheDocument();
-    // Back on it, the pause can be taken out.
-    await userEvent.click(lineButton('Stay a little longer'));
-    await userEvent.click(screen.getByRole('button', { name: 'Remove the pause' }));
-    expect(latest[0]!.end).toBeUndefined();
-    expect(screen.queryByText('pause at 00:12.20')).not.toBeInTheDocument();
+    expect(ctrl.now).toBeCloseTo(13.75);
+    expect(ctrl.playing).toBe(true);
+    ctrl.now = 18.5;
+    fireEvent.keyDown(document.body, { key: 'c' });
+    expect(latest[2]).toMatchObject({ time: 18.5, source: 'manual' });
+    expect(screen.queryByText('needs timing')).not.toBeInTheDocument();
   });
 
-  it('shows the pause on the stage, then the next line', () => {
+  it('shifts every line at once, and flags a line timed before the previous one', async () => {
     const ctrl = new FakeAudio();
     render(<Editable ctrl={ctrl} />);
-    fireEvent.keyDown(document.body, { key: 'ArrowDown' }); // the first line
-    ctrl.now = 12.2;
-    fireEvent.keyDown(document.body, { key: 'p' });
-    const stage = document.querySelector('.lyrics-stage') as HTMLElement;
-    act(() => ctrl.seek(11));
-    expect(within(stage).getByText('Now')).toBeInTheDocument();
-    act(() => ctrl.seek(13));
-    expect(within(stage).getByText('Pause')).toBeInTheDocument();
-    expect(within(stage).getByText('Stay a little longer')).toHaveClass('lyrics-stage__prev');
-    expect(within(stage).getByText('The harbour falls asleep behind us')).toBeInTheDocument();
-    // No line is "being sung" in the list during the pause.
-    expect(within(screen.getByRole('list', { name: 'Synced lines' })).queryByRole('button', { current: true })).toBeNull();
-    act(() => ctrl.seek(14.5));
-    expect(within(stage).getByText('The harbour falls asleep behind us')).toHaveClass('lyrics-stage__current');
+    await userEvent.click(screen.getByText('Shift every line'));
+    await userEvent.click(screen.getByRole('button', { name: 'Shift every line by −0.1 s' }));
+    expect(latest.map((l) => l.time)).toEqual([9.7, 14.15, null]);
+    // A slip of "set & next" before the line even started: the next line lands before it.
+    await userEvent.click(lineButton('Stay a little longer'));
+    ctrl.now = 9;
+    fireEvent.keyDown(document.body, { key: 'c' });
+    expect(within(lineButton('The harbour falls asleep behind us')).getByText('before the previous one')).toBeInTheDocument();
+  });
+
+  it('slows the music down for precise timing', async () => {
+    const ctrl = new FakeAudio();
+    render(<Editable ctrl={ctrl} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Playback speed 1×, change' }));
+    expect(ctrl.rate).toBe(0.75);
   });
 
   it('works from the keyboard and undoes', async () => {
@@ -205,16 +195,13 @@ describe('fixing lines on the result screen', () => {
     fireEvent.keyDown(document.body, { key: 'ArrowDown' });
     fireEvent.keyDown(document.body, { key: 'ArrowLeft', shiftKey: true });
     expect(latest[1]!.time).toBe(13.25);
-    ctrl.now = 13.1;
-    fireEvent.keyDown(document.body, { key: 's' });
-    expect(latest[1]!.time).toBe(13.1);
     ctrl.now = 17;
     fireEvent.keyDown(document.body, { key: 'c' });
     expect(latest[2]!.time).toBe(17);
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true });
     expect(latest[2]!.time).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(latest[1]!.time).toBe(13.25);
+    expect(latest[1]!.time).toBe(14.25);
   });
 
   it('leaves typing alone', async () => {
@@ -222,7 +209,7 @@ describe('fixing lines on the result screen', () => {
     render(<Editable ctrl={ctrl} />);
     await userEvent.click(lineButton('Stay a little longer'));
     await userEvent.click(screen.getByText('Track info (optional)'));
-    await userEvent.type(screen.getByLabelText('Title'), 'snpc');
+    await userEvent.type(screen.getByLabelText('Title'), 'nc');
     expect(latest).toEqual(lines);
   });
 });
