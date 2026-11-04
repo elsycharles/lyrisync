@@ -5,6 +5,10 @@
 export const fr = {
   app: {
     tagline: 'Paroles synchronisées, directement dans le navigateur',
+    /** The browser tab title and the page description, in the interface language. */
+    documentTitle: 'LyriSync — paroles synchronisées en .lrc',
+    metaDescription:
+      'Collez vos paroles, déposez un morceau, récupérez un fichier .lrc synchronisé. Tout se passe dans votre navigateur.',
     footer: 'Tout se passe dans votre navigateur : aucun fichier n’est envoyé à un serveur.',
     version: (v: string) => `Version ${v}`,
     languageGroup: 'Langue de l’interface',
@@ -252,6 +256,8 @@ export type Messages = typeof fr;
 export const en: Messages = {
   app: {
     tagline: 'Synced lyrics, right in your browser',
+    documentTitle: 'LyriSync — synced lyrics as .lrc',
+    metaDescription: 'Paste your lyrics, drop in a track, get a synced .lrc file. Everything happens in your browser.',
     footer: 'Everything runs in your browser: no file is ever sent to a server.',
     version: (v: string) => `Version ${v}`,
     languageGroup: 'Interface language',

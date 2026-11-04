@@ -34,8 +34,12 @@ export function I18nProvider({ children, lang: forced }: { children: ReactNode; 
     }
   }, []);
 
+  // The page itself follows the language too: <html lang>, the tab title, the description.
   useEffect(() => {
+    const t = messages[lang];
     document.documentElement.lang = lang;
+    document.title = t.app.documentTitle;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', t.app.metaDescription);
   }, [lang]);
 
   const value = useMemo(() => ({ lang, t: messages[lang], setLang }), [lang, setLang]);
