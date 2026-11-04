@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { isTextField } from '../hooks/useSpaceToggle';
-import { endAndStartNext, endWithPause, lastStartedIndex, nudgeLine, removePause, withStart } from '../lib/timing';
+import { activeLineIndex, nudgeLine, startNextAt } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
 import { currentLineIndex, playLine, stepLine } from './LineTools';
 
@@ -15,10 +15,9 @@ interface Options {
 }
 
 /**
- * What the selected line's tools do, shared by the adjustment editor and the result list,
- * plus their keyboard shortcuts (installed while `onEdit` is given):
- * ↑/↓ choose · ←/→ ±0.1 s (Shift ±1 s) · Enter listen · S start here · P pause here ·
- * C end & next · N next line · Backspace previous line · Escape deselect · Ctrl/Cmd+Z undo.
+ * What the selected line's tools do, plus their keyboard shortcuts (installed while
+ * `onEdit` is given): ↑/↓ choose · ←/→ ±0.1 s (Shift ±1 s) · Enter listen ·
+ * C set & next · N next line · Backspace previous line · Escape deselect · Ctrl/Cmd+Z undo.
  */
 export function useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSelectedId }: Options) {
   const indexOf = (id: string) => lines.findIndex((l) => l.id === id);
@@ -31,24 +30,13 @@ export function useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSel
 
   const actions = {
     nudge: (id: string, delta: number) => onEdit?.(nudgeLine(lines, id, delta)),
-    /** The line starts now. */
-    setStart: (id: string) => onEdit?.(lines.map((l) => (l.id === id ? withStart(l, ctrl.currentTime()) : l))),
-    /** The line ends now, the next one starts now: pressed as each line finishes. */
-    endAndNext: (id: string) => {
+    /** The line ends now, so the next one starts now: pressed as each line finishes. */
+    setNext: (id: string) => {
       const index = indexOf(id);
-      if (index < 0) return;
-      onEdit?.(endAndStartNext(lines, index, ctrl.currentTime()));
+      if (index < 0 || index === lines.length - 1) return;
+      onEdit?.(startNextAt(lines, index, ctrl.currentTime()));
       selectAt(index + 1);
     },
-    /** The line ends now, with silence until the next one. */
-    pause: (id: string) => {
-      const index = indexOf(id);
-      const out = endWithPause(lines, index, ctrl.currentTime());
-      if (out === lines) return;
-      onEdit?.(out);
-      selectAt(index + 1);
-    },
-    removePause: (id: string) => onEdit?.(removePause(lines, id)),
     play: (line: LyricLine) => playLine(ctrl, line),
     /** Back a line, the music with it. */
     previous: () => step(-1),
@@ -86,7 +74,7 @@ export function useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSel
         case 'ArrowDown': {
           e.preventDefault();
           // The first press picks the line the music is on.
-          const from = index >= 0 ? index : Math.max(0, lastStartedIndex(lines, ctrl.currentTime()));
+          const from = index >= 0 ? index : Math.max(0, activeLineIndex(lines, ctrl.currentTime()));
           const to = index < 0 ? from : Math.min(lines.length - 1, Math.max(0, from + (e.key === 'ArrowUp' ? -1 : 1)));
           const line = lines[to];
           if (line) setSelectedId(line.id);
@@ -102,7 +90,7 @@ export function useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSel
           // A focused tool keeps its own Enter; on a line (just clicked) it plays rather
           // than clicking the line again, which would deselect it.
           const el = e.target as HTMLElement | null;
-          if (!selected || (el?.tagName === 'BUTTON' && !el.matches('.line, .line__select'))) return;
+          if (!selected || (el?.tagName === 'BUTTON' && !el.matches('.line'))) return;
           e.preventDefault();
           actions.play(selected);
           return;
@@ -122,11 +110,10 @@ export function useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSel
         actions.next();
         return;
       }
-      if (!selected || !['c', 'p', 's'].includes(key)) return;
-      e.preventDefault();
-      if (key === 'c') actions.endAndNext(selected.id);
-      else if (key === 'p') actions.pause(selected.id);
-      else actions.setStart(selected.id);
+      if (key === 'c' && selected) {
+        e.preventDefault();
+        actions.setNext(selected.id);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

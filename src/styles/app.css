@@ -261,10 +261,6 @@ a {
   max-width: 600px;
 }
 
-.main--editor {
-  max-width: 860px;
-}
-
 .footer {
   max-width: var(--page-width);
   width: 100%;
@@ -436,10 +432,6 @@ a {
   background: var(--surface);
 }
 
-
-
-
-
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
@@ -447,23 +439,8 @@ a {
   }
 }
 
-/* --- layout helpers --- */
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-
 .main:focus {
   outline: none;
-}
-
-.field__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
 }
 
 .hint--error {
@@ -790,11 +767,6 @@ a {
   color: var(--muted);
   font-weight: 400;
   font-variant-numeric: tabular-nums;
-}
-
-.cta__manual {
-  align-self: center;
-  font-size: 13px;
 }
 
 .btn-link:disabled {
@@ -1128,21 +1100,6 @@ a {
   white-space: nowrap;
 }
 
-.meter {
-  display: block;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--line);
-  overflow: hidden;
-}
-
-.meter > span {
-  display: block;
-  height: 100%;
-  background: var(--ls-accent-fill);
-  transition: width 0.2s;
-}
-
 .error-badge {
   width: 40px;
   height: 40px;
@@ -1225,14 +1182,6 @@ a {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   flex: none;
-}
-
-.clock {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 23px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
 .speed {
@@ -1430,135 +1379,9 @@ button.line--active:not(:disabled):hover {
   white-space: nowrap;
 }
 
-/* --- screen 3: tabs --- */
-.tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: var(--radius);
-  background: var(--bg);
-  border: 1px solid var(--line);
-}
-
-.tab {
-  flex: 1;
-  font-family: var(--font-body);
-  font-size: 13.5px;
-  font-weight: 600;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.tab[aria-selected='true'] {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: 0 0 0 1px var(--line);
-}
-
-/* --- tap to sync --- */
-.tapcard {
-  background: var(--surface);
-  border: 1.5px solid var(--accent);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  text-align: center;
-}
-
-.tapcard .eyebrow {
-  font-size: 11.5px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--muted);
-}
-
-.tapcard .currentline {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 17px;
-  line-height: 1.35;
-  color: var(--ink);
-  text-wrap: balance;
-}
-
-.btn--pressed,
 .btn--primary:active {
   transform: scale(0.985);
   background: #5b3be0;
-}
-
-.kbd {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 4px;
-  padding: 1px 5px;
-  margin-left: 8px;
-}
-
-.counter {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.counter .done {
-  font-weight: 600;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  flex: none;
-}
-
-.counter .meter {
-  flex: 1;
-}
-
-
-
-.line--static {
-  cursor: default;
-}
-
-.line .undo {
-  margin-left: auto;
-  font-size: 11.5px;
-  flex: none;
-  white-space: nowrap;
-}
-
-.line--waiting {
-  opacity: 0.75;
-}
-
-/* --- fine tuning --- */
-.line--row {
-  padding: 0 0 0 11px;
-  align-items: flex-start;
-  cursor: default;
-}
-
-.line__select {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  padding: 9px 11px 9px 0;
-  border: none;
-  background: transparent;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
 }
 
 .line--selected {
@@ -1567,93 +1390,8 @@ button.line--active:not(:disabled):hover {
   color: var(--ink);
 }
 
-
 .line .flag--warn {
   color: var(--amber-text);
-}
-
-.check {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  margin: 12px 0 0;
-  flex: none;
-  border: 1.5px solid var(--muted);
-  border-radius: 4px;
-  background: var(--field) center / 10px 10px no-repeat;
-  cursor: pointer;
-}
-
-.check:checked {
-  background-color: var(--ls-accent-fill);
-  border-color: var(--ls-accent-fill);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath d='M1 4.6l2.4 2.3L8 1.8' stroke='%23fff' stroke-width='1.7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-}
-
-.check:hover {
-  border-color: var(--accent);
-}
-
-
-
-
-
-.batchbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 11px;
-  border-radius: 9px;
-  background: var(--surface);
-  border: 1px solid var(--accent);
-  font-size: 12.5px;
-  flex-wrap: wrap;
-}
-
-.batchbar .count {
-  font-weight: 600;
-  color: var(--ink);
-  flex: 1 1 auto;
-  white-space: nowrap;
-}
-
-.batchbar__actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
-
-.batchbar__unit {
-  color: var(--muted);
-  margin-right: 4px;
-}
-
-.batchbar__actions button {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 7px 10px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: var(--ls-accent-fill);
-  color: #fff;
-  cursor: pointer;
-  font-variant-numeric: tabular-nums;
-}
-
-.batchbar__actions button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.input--small {
-  width: 64px;
-  padding: 6px 8px;
-  font-size: 13px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 /* --- service worker toast --- */
@@ -1686,12 +1424,10 @@ button.line--active:not(:disabled):hover {
   gap: 8px;
 }
 
-
 .hint--warn {
   color: var(--amber-text);
   font-weight: 600;
 }
-
 
 /* An automatically placed line that is less certain: a quiet amber marker, not an error. */
 .line--check {
@@ -1720,8 +1456,6 @@ button.line--active:not(:disabled):hover {
   gap: 16px;
 }
 
-
-
 .result__summary {
   display: flex;
   flex-direction: column;
@@ -1741,8 +1475,6 @@ button.line--active:not(:disabled):hover {
   max-height: calc(100vh - 190px);
 }
 
-
-
 .track-text {
   display: flex;
   flex-direction: column;
@@ -1759,11 +1491,6 @@ button.line--active:not(:disabled):hover {
 }
 
 /* Now playing: the reading position, so mint. */
-
-
-
-
-
 
 @keyframes line-in {
   from {
@@ -1794,17 +1521,6 @@ button.line--active:not(:disabled):hover {
   background: var(--bg);
   color: var(--muted);
   font-weight: 600;
-}
-
-/* --- screen 3: editor --- */
-.sticky-player {
-  position: sticky;
-  top: 64px;
-  z-index: 5;
-  margin: 0 -4px;
-  padding: 4px;
-  border-radius: var(--radius-lg);
-  background: var(--surface);
 }
 
 /* --- responsive; kept last so it overrides the component rules above --- */
@@ -1902,7 +1618,6 @@ button.line--active:not(:disabled):hover {
     display: none;
   }
 }
-
 
 /* Keyboard tips mean nothing on a touch screen. */
 @media (pointer: coarse) {
@@ -2092,26 +1807,15 @@ button.line--active:not(:disabled):hover {
 }
 
 /* --- adjust: the line being played, and the selected line's tools --- */
-/* Every time cell keeps the same padding, so only the colour changes on the playing line. */
-.line--row time {
-  padding: 1px 6px;
-  margin-left: -6px;
-  border-radius: 6px;
-}
 
-/* Two rows: the start and moving between lines; then timing from the playhead. */
+/* The line's start and its nudges, then the actions; they wrap onto two rows when narrow. */
 .line-tools {
-  display: grid;
-  gap: 8px;
-  padding: 10px 2px 6px;
-}
-
-.line-tools__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px 12px;
+  padding: 10px 2px 6px;
 }
 
 /* −1 s  −0,1 s  [time]  +0,1 s  +1 s, as one control */
@@ -2169,23 +1873,6 @@ button.line--active:not(:disabled):hover {
   flex-wrap: wrap;
 }
 
-/* "⏸ 00:07.20" after a line: it stops there and silence follows. Neutral, not a status. */
-.pause-mark {
-  margin-left: auto;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 1px 7px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
 .tool-btn {
   display: inline-flex;
   align-items: center;
@@ -2219,47 +1906,9 @@ button.line--active:not(:disabled):hover {
   color: var(--muted);
 }
 
-/* Batch shift: follows the list down, so it is always at hand. */
-.batchbar {
-  position: sticky;
-  bottom: 14px;
-  z-index: 4;
-  box-shadow: 0 8px 24px rgba(34, 27, 61, 0.16);
-}
-
-.batchbar .count {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.batchbar__clear {
-  font-size: 12px;
-}
-
-/* Bottom actions of both editor modes: secondary on the left, the way out on the right. */
-.editor-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-top: 4px;
-}
-
-.editor-actions .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.editor-actions__spacer {
-  flex: 1;
-}
-
 @media (max-width: 620px) {
   .line-tools__nudge,
-  .line-tools__row > .line-tools__group {
+  .line-tools__group {
     width: 100%;
   }
 
@@ -2276,28 +1925,9 @@ button.line--active:not(:disabled):hover {
   .line-tools__time {
     min-width: 76px;
   }
-
-  .editor-actions .btn--primary {
-    flex: 1 1 100%;
-    justify-content: center;
-    order: 3;
-  }
 }
 
 /* --- result: fixing lines in place --- */
-.summary__actions {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
-
-.summary__actions .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-}
-
 .lines-hint {
   margin-top: -4px;
 }
@@ -2385,22 +2015,14 @@ button.line--selected:not(:disabled):hover {
  * Kept last, with a doubled class, so it wins over .line--selected and .line--check.
  */
 .line.line--active,
-.line.line--playing,
-button.line.line--active:not(:disabled):hover,
-button.line.line--playing:not(:disabled):hover,
-.line.line--playing.line--selected {
+button.line.line--active:not(:disabled):hover {
   background: var(--mint-tint);
   border-color: var(--mint);
   border-style: solid;
   color: var(--ink);
 }
 
-.line.line--playing {
-  font-weight: 600;
-}
-
-.line--active time,
-.line--playing time {
+.line--active time {
   color: var(--ink);
   font-weight: 700;
 }
@@ -2436,65 +2058,63 @@ button.line.line--playing:not(:disabled):hover,
   background: rgba(255, 255, 255, 0.06);
 }
 
-.stage-card .transport:focus-visible {
+.stage-card .transport:focus-visible,
+.stage-card .speed:focus-visible {
   outline-color: #9b82ff;
 }
 
-/* Narrow screens: flags and the pause mark go under the line's text instead of squeezing it. */
+.stage-card .speed {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #c6c0dc;
+}
+
+.stage-card .speed:hover {
+  border-color: #9b82ff;
+  color: #fff;
+}
+
+/* A panel head's right side: a small action and a count chip. It moves under the title
+   rather than squeezing it. */
+.panel__head:has(.panel__head-end) {
+  flex-wrap: wrap;
+}
+
+.panel__head-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.btn-link--icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* "Shift every line": the line nudge control, applied to the whole song. */
+.shift-all {
+  align-self: flex-start;
+}
+
+/* Narrow screens: flags go under the line's text instead of squeezing it. */
 @media (max-width: 480px) {
-  .lines--scroll button.line,
-  .line__select {
+  .lines--scroll button.line {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     column-gap: 10px;
     row-gap: 4px;
   }
 
-  .lines--scroll button.line > .flag,
-  .lines--scroll button.line > .pause-mark,
-  .line__select > .flag,
-  .line__select > .pause-mark {
+  .lines--scroll button.line > .flag {
     grid-column: 2;
     justify-self: start;
     margin-left: 0;
   }
 }
 
-/* The editor's clock player on the smallest phones: tighter, and the duration gives way. */
-@media (max-width: 400px) {
-  .sticky-player .player__top {
-    gap: 8px;
-  }
-
-  .clock {
-    font-size: 19px;
-  }
-}
-
+/* The smallest phones: −1 s  −0,1 s  [time]  +0,1 s  +1 s still on one line. */
 @media (max-width: 360px) {
-  .clock ~ .times {
-    display: none;
-  }
-
-  .sticky-player .player__top {
-    gap: 6px;
-  }
-
-  .sticky-player .transport,
-  .sticky-player .play {
-    width: 30px;
-    height: 30px;
-  }
-
-  .clock {
-    font-size: 17px;
-  }
-
-  .sticky-player .speed {
-    margin-left: auto;
-  }
-
-  /* −1 s  −0,1 s  [time]  +0,1 s  +1 s still on one line. */
   .line-tools__nudge button {
     padding: 8px 3px;
     font-size: 12px;

@@ -1,7 +1,7 @@
 import { alignLyrics } from '../lib/align/align';
 import { decodeAudioFile } from '../lib/audio/decode';
 import { roundCs } from '../lib/time';
-import { dropUncertainPauses, fillMissingTimes } from '../lib/timing';
+import { fillMissingTimes } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
 import { acoustic, type AnalysisProgress } from '../worker/ctcClient';
 import type { Device, WhisperLanguage } from '../worker/models';
@@ -29,8 +29,6 @@ export interface SyncInput {
   lines: LyricLine[];
   language: WhisperLanguage;
   mode: SyncMode;
-  /** Pauses are kept only between lines at least this reliable (benchmark: 0 keeps all). */
-  pauseReliability?: number;
 }
 
 export interface SyncResult {
@@ -42,12 +40,6 @@ export interface SyncResult {
 /** Whisper's word timestamps run ~0.14 s late on sung vocals (JamendoLyrics benchmark). */
 const WHISPER_LATENCY = 0.14;
 const WHISPER_MODEL = 'small';
-
-/**
- * Automatic pauses are kept only between lines at least this reliable: a pause after a
- * misplaced line would blank the display while it is sung (JamendoLyrics benchmark).
- */
-export const PAUSE_RELIABILITY = 0.9;
 
 /**
  * How likely a placed line is to be within half a second of the truth, from what was
@@ -136,19 +128,13 @@ export async function runSync(input: SyncInput, onProgress: (p: SyncProgress) =>
     if (l.time === null) return { id: l.id, text: l.text, time: null, source: null, confidence: 0 };
     const reliability = lineReliability(l.confidence ?? 0, anchors?.[i] ?? null, l.time);
     reliabilitySum += reliability;
-    const line: LyricLine = { id: l.id, text: l.text, time: l.time, source: 'auto', confidence: reliability };
-    // A pause detected after the line (the voice stops well before the next one).
-    if (l.end !== undefined && l.end > l.time) line.end = l.end;
-    return line;
+    return { id: l.id, text: l.text, time: l.time, source: 'auto' as const, confidence: reliability };
   });
   const estimatedIds = new Set(timed.filter((l) => l.time === null).map((l) => l.id));
   const filled = fillMissingTimes(timed, audio.duration).map((l) =>
     estimatedIds.has(l.id) ? { ...l, time: roundCs(l.time!), source: 'auto' as const, confidence: 0.3, estimated: true } : l,
   );
-  return {
-    lines: dropUncertainPauses(filled, input.pauseReliability ?? PAUSE_RELIABILITY),
-    confidence: lines.length ? (reliabilitySum + 0.3 * estimatedIds.size) / lines.length : 0,
-  };
+  return { lines: filled, confidence: lines.length ? (reliabilitySum + 0.3 * estimatedIds.size) / lines.length : 0 };
 }
 
 export function cancelSync(): void {

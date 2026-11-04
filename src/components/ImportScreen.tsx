@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { useI18n } from '../i18n/useI18n';
 import { looksLikeLrc } from '../lib/lrc';
 import { parseLyrics } from '../lib/lyrics';
@@ -8,7 +8,7 @@ import { resolveLanguage, type SyncSettings } from '../state/settings';
 import { SYNC_DOWNLOAD_MB, type SyncMode } from '../state/syncEngine';
 import type { Device, LanguageChoice } from '../worker/models';
 import { AudioDropzone } from './AudioDropzone';
-import { CheckIcon, GlobeIcon, InfinityIcon, LockIcon } from './icons';
+import { CheckIcon, FileIcon, GlobeIcon, InfinityIcon, LockIcon } from './icons';
 
 interface Props {
   lyricsText: string;
@@ -19,7 +19,7 @@ interface Props {
   onSettingsChange: (patch: Partial<SyncSettings>) => void;
   device: Device;
   onSync: () => void;
-  onManual: () => void;
+  /** Opens lyrics that already have timestamps (.lrc) on the review screen. */
   onOpenLrc: () => void;
 }
 
@@ -32,6 +32,7 @@ export function ImportScreen(props: Props) {
   const lyricsId = useId();
   const lyricsHintId = useId();
   const modeName = useId();
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const isLrc = useMemo(() => looksLikeLrc(lyricsText), [lyricsText]);
   const lineCount = useMemo(() => (isLrc ? 0 : parseLyrics(lyricsText).length), [lyricsText, isLrc]);
@@ -67,7 +68,25 @@ export function ImportScreen(props: Props) {
             <h2 className="panel__title" id={`${lyricsId}-title`}>
               <label htmlFor={lyricsId}>{t.import.lyricsLabel}</label>
             </h2>
-            {hasLyrics && <span className="chip chip--quiet">{t.import.lyricsCount(lineCount)}</span>}
+            <span className="panel__head-end">
+              {hasLyrics && <span className="chip chip--quiet">{t.import.lyricsCount(lineCount)}</span>}
+              <button type="button" className="btn-link btn-link--icon" onClick={() => fileRef.current?.click()} title={t.import.lyricsFileHint}>
+                <FileIcon size={14} /> {t.import.lyricsFile}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".lrc,.txt,text/plain"
+                className="visually-hidden"
+                data-testid="lyrics-file"
+                tabIndex={-1}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = '';
+                  if (file) props.onLyricsChange(await file.text());
+                }}
+              />
+            </span>
           </div>
           <textarea
             id={lyricsId}
@@ -83,8 +102,8 @@ export function ImportScreen(props: Props) {
           </p>
           {isLrc && (
             <div className="notice notice--row">
-              <span>{t.import.lrcDetected}</span>
-              <button type="button" className="btn-link" onClick={props.onOpenLrc}>
+              <span>{audio ? t.import.lrcDetected : t.import.lrcNeedsAudio}</span>
+              <button type="button" className="btn-link" onClick={props.onOpenLrc} disabled={!audio}>
                 {t.import.lrcOpen}
               </button>
             </div>
@@ -190,9 +209,6 @@ export function ImportScreen(props: Props) {
             </ul>
             <button type="button" className="btn btn--primary btn--big btn--block" disabled={!ready} onClick={props.onSync}>
               {t.import.sync}
-            </button>
-            <button type="button" className="btn-link cta__manual" disabled={!ready} onClick={props.onManual}>
-              {t.import.manual}
             </button>
           </div>
         </div>

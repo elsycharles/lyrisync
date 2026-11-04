@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { usePlaybackSelector, usePlaying } from '../audio/usePlayback';
 import { spaceToggleProps } from '../hooks/useSpaceToggle';
 import { useI18n } from '../i18n/useI18n';
 import { RELIABLE } from '../lib/confidence';
 import { formatTimestamp } from '../lib/time';
-import { activeLineIndex, pauseAfter } from '../lib/timing';
+import { activeLineIndex, outOfOrderIds } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
-import { PauseIcon } from './icons';
 import { LineTools } from './LineTools';
 import { useLineEditing } from './useLineEditing';
 
@@ -43,6 +42,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
   const setSelectedId = onSelect ?? setOwnId;
   const editable = !!onEdit;
   const edit = useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSelectedId });
+  const outOfOrder = useMemo(() => outOfOrderIds(lines), [lines]);
 
   // Follow the sung line while playing, unless the user is busy with a line of their own.
   useEffect(() => {
@@ -61,7 +61,6 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
   return (
     <ol className="lines lines--scroll" ref={listRef} aria-label={t.result.linesLabel} {...spaceToggleProps(() => ctrl.toggle())}>
       {lines.map((line, i) => {
-        const pause = pauseAfter(lines, i);
         const isActive = i === active;
         const isSelected = line.id === selectedId;
         const untimed = line.time === null;
@@ -94,20 +93,18 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
               <time>{untimed ? '—' : formatTimestamp(line.time!)}</time>
               <span className="line__text">{line.text}</span>
               {untimed && <span className="flag">{t.result.needsTiming}</span>}
-              {!untimed && isToCheck(line) && (
+              {!untimed && outOfOrder.has(line.id) && <span className="flag flag--warn">{t.editor.outOfOrder}</span>}
+              {!untimed && !outOfOrder.has(line.id) && isToCheck(line) && (
                 <span className="flag flag--check">{line.estimated ? t.result.estimated : t.result.toCheck}</span>
               )}
-              {pause !== null && <PauseMark time={pause} label={t.editor.endsAt(formatTimestamp(pause))} />}
             </button>
             {editable && isSelected && (
               <LineTools
                 line={line}
-                pause={pause}
+                isFirst={i === 0}
+                isLast={i === lines.length - 1}
                 onNudge={(d) => edit.nudge(line.id, d)}
-                onSetStart={() => edit.setStart(line.id)}
-                onPause={() => edit.pause(line.id)}
-                onSetNext={() => edit.endAndNext(line.id)}
-                onRemovePause={() => edit.removePause(line.id)}
+                onSetNext={() => edit.setNext(line.id)}
                 onPlay={() => edit.play(line)}
                 onPrevious={edit.previous}
                 onNext={edit.next}
@@ -117,16 +114,5 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
         );
       })}
     </ol>
-  );
-}
-
-/** "⏸ 00:07.20" at the end of a line row: the line stops there, silence follows. */
-export function PauseMark({ time, label }: { time: number; label: string }) {
-  return (
-    <span className="pause-mark" title={label}>
-      <PauseIcon size={10} />
-      <span className="visually-hidden">{label}</span>
-      <span aria-hidden="true">{formatTimestamp(time)}</span>
-    </span>
   );
 }
