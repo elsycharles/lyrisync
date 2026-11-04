@@ -3,10 +3,12 @@ import { expect, test } from '@playwright/test';
 test('switches language and theme, and remembers them', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Your lyrics, synced automatically' })).toBeVisible();
+  await expect(page).toHaveTitle('LyriSync — synced lyrics as .lrc');
 
   await page.getByRole('button', { name: 'Français' }).click();
   await expect(page.getByRole('heading', { name: 'Vos paroles, synchronisées automatiquement' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
+  await expect(page).toHaveTitle('LyriSync — paroles synchronisées en .lrc');
 
   // No theme chosen yet: the page follows the device (light in this browser).
   await expect(page.locator('html')).not.toHaveAttribute('data-theme');
