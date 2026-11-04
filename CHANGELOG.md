@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-11-04
+
+### Added
+
+- LyriSync is open source under the GNU AGPL v3.0 or later (see LICENSE). The name and
+  logo are not covered, and the models keep their own licenses (MMS: CC BY-NC 4.0).
+
+### Changed
+
+- The tests and examples use invented lyrics instead of lines from a real song.
+
 ## [0.3.1] — 2026-11-04
 
 ### Fixed
@@ -139,7 +150,8 @@ First MVP release.
 - Installable PWA that works offline after the first run.
 - COOP/COEP headers for Cloudflare Pages and Netlify.
 
-[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.3.1...develop
+[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.3.2...develop
+[0.3.2]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.2
 [0.3.1]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.1
 [0.3.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.0
 [0.2.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.2.0

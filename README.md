@@ -21,7 +21,7 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
   - repeats are expanded: "(x2)", "×3", "(bis)", "[Chorus x2]", and a header with nothing under it means the chorus is sung again;
   - inline ad-libs in parentheses are made optional;
   - numbers are spelled out ("le 9" → "le neuf");
-  - Arabizi is read ("ga3ma"), and look-alike Cyrillic letters are fixed.
+  - Arabizi is read ("sa7bi"), and look-alike Cyrillic letters are fixed.
 - **One screen to check and fix.** Listen with the lyrics on screen, then fix lines in place while the music plays:
   - "Set & next" (C) as a line finishes: the next one starts at that moment (on the "♪ Intro" row, as the intro ends: the first line starts);
   - or time everything by hand, with no model to download at all;
@@ -196,3 +196,12 @@ The project follows **Gitflow**. See [CONTRIBUTING.md](CONTRIBUTING.md) for the 
 ## Privacy
 
 Lyrics and audio are processed entirely in the browser and are never uploaded. The history (projects, their audio and every version of the lines) is stored on the device only, in the browser's IndexedDB, and stays there until you delete it from the History screen; the app asks the browser to keep it (persistent storage). The only network requests are for the app itself, the ONNX Runtime binaries (jsDelivr) and the model weights (Hugging Face Hub). Supplying lyrics you have the right to use remains your responsibility.
+
+## License
+
+LyriSync is free software: you can use, study, share and modify it under the terms of the [GNU Affero General Public License, version 3 or later](LICENSE). If you run a modified version for other people, including as a website, you must offer them its source code under the same license.
+
+Copyright © 2026 the LyriSync authors.
+
+- The LyriSync name and logo are not covered by this license: a fork must use its own.
+- The models are not part of this repository. They are downloaded at run time and keep their own licenses: the MMS forced aligner from Meta is CC BY-NC 4.0 (non-commercial use only), Whisper from OpenAI is Apache-2.0, and Spleeter from Deezer is MIT.

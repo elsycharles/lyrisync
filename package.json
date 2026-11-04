@@ -1,7 +1,8 @@
 {
   "name": "lyrisync",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
+  "license": "AGPL-3.0-or-later",
   "description": "Free, browser-based lyrics-to-audio aligner. Paste your lyrics, drop in a track, get a synced .lrc file — no server, no account, no limits.",
   "type": "module",
   "engines": {

@@ -9,7 +9,7 @@ describe('romanizeLine', () => {
   });
 
   it('spells numbers in the line language', () => {
-    expect(romanizeLine("j'peux sortir le 9", 'fr')).toEqual(["j'peux", 'sortir', 'le', 'neuf']);
+    expect(romanizeLine("j'en ai vu 9", 'fr')).toEqual(["j'en", 'ai', 'vu', 'neuf']);
     expect(romanizeLine('24/7 with my 2 friends', 'en')).toEqual(['twenty', 'four', 'seven', 'with', 'my', 'two', 'friends']);
     expect(romanizeLine('Taona 2024', 'mg')).toEqual(['taona', 'efatra', 'amby', 'roapolo', 'sy', 'roa', 'arivo']);
     expect(romanizeLine('le 1er, la 2e', 'fr')).toEqual(['le', 'premier', 'la', 'deuxieme']);
@@ -25,9 +25,7 @@ describe('romanizeLine', () => {
   });
 
   it('reads Arabizi digits inside words as sounds', () => {
-    expect(romanizeLine('Ga3ma hsit, katl3i lo l’moral, ghayt9adalo', 'fr')).toEqual([
-      'gaama', 'hsit', 'katlai', 'lo', "l'moral", 'ghaytqadalo',
-    ]);
+    expect(romanizeLine('Sa7bi, nta m3aya, galbi m9ass', 'fr')).toEqual(['sahbi', 'nta', 'maaya', 'galbi', 'mqass']);
     expect(romanizeLine('50cent', 'en')).toEqual(['fifty', 'cent']);
   });
 
