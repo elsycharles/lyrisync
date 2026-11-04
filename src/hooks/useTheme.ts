@@ -48,6 +48,12 @@ export function useTheme() {
   }, [stored]);
 
   const theme = stored ?? system;
-  const toggle = useCallback(() => setStored(theme === 'dark' ? 'light' : 'dark'), [theme]);
+  const toggle = useCallback(() => {
+    // Colours fade into the other theme instead of snapping (app.css: .theme-switching).
+    const root = document.documentElement;
+    root.classList.add('theme-switching');
+    window.setTimeout(() => root.classList.remove('theme-switching'), 350);
+    setStored(theme === 'dark' ? 'light' : 'dark');
+  }, [theme]);
   return { theme, toggle };
 }

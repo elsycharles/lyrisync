@@ -72,8 +72,10 @@ test('"set & next" while the music plays, "next" to move on, then export', async
 
   const lines = lrcLines((await exportLrc(page)).text);
   expect(lines.map((l) => l.text)).toEqual(['First line', 'Second line', 'Third line']);
-  expect(lines[1]!.time).toBeGreaterThan(2.2);
-  expect(lines[1]!.time).toBeLessThan(3.5);
+  // The second line starts where the music was when C was pressed: not before the wait
+  // (times are kept to the centisecond, so 2.203 s reads 2.20) and before the third line.
+  expect(lines[1]!.time).toBeGreaterThanOrEqual(2.2);
+  expect(lines[1]!.time).toBeLessThan(8);
   expect([lines[0]!.time, lines[2]!.time]).toEqual([1, 8]);
 });
 

@@ -9,6 +9,7 @@ import { formatTimestamp } from '../lib/time';
 import { activeLineIndex, outOfOrderIds } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
 import { INTRO_ID, IntroTools, LineTools } from './LineTools';
+import { prefersReducedMotion, Reveal } from './Reveal';
 import { useLineEditing } from './useLineEditing';
 
 /** An automatically placed line whose timing is less certain than the rest. */
@@ -40,7 +41,7 @@ function revealInList(list: HTMLElement, row: HTMLElement, anchor: boolean) {
   else if (r.top < l.top + 4) delta = r.top - l.top - 4;
   else if (r.bottom > l.bottom - 4) delta = r.bottom - l.bottom + 4;
   if (Math.abs(delta) < 2) return;
-  if (typeof list.scrollBy === 'function') list.scrollBy({ top: delta, behavior: anchor ? 'smooth' : 'auto' });
+  if (typeof list.scrollBy === 'function') list.scrollBy({ top: delta, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   else list.scrollTop += delta;
 }
 
@@ -150,14 +151,14 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
             <time>{formatTimestamp(0)}</time>
             <span className="line__text">♪ {t.result.intro}</span>
           </button>
-          {introSelected && !editing && (
+          <Reveal open={introSelected && !editing}>
             <IntroTools
               onSetNext={() => edit.setNext(INTRO_ID)}
               onPlay={edit.playIntro}
               onNext={edit.next}
               onAddFirst={() => setEditing({ kind: 'add', afterId: INTRO_ID })}
             />
-          )}
+          </Reveal>
         </li>
       )}
       {addingFirst && (
@@ -209,7 +210,8 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
                   )}
                 </button>
               )}
-              {editable && isSelected && !editing && (
+              {editable && (
+                <Reveal open={isSelected && !editing}>
                 <LineTools
                   line={line}
                   isLast={i === lines.length - 1}
@@ -223,6 +225,7 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
                   onDelete={() => deleteLine(line.id)}
                   canDelete={lines.length > 1}
                 />
+                </Reveal>
               )}
             </li>
             {editing?.kind === 'add' && editing.afterId === line.id && (
