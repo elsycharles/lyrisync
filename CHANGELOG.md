@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- LyriSync is open source under the GNU AGPL v3.0 or later (see LICENSE). The name and
+  logo are not covered, and the models keep their own licenses (MMS: CC BY-NC 4.0).
+
+### Changed
+
+- The tests and examples use invented lyrics instead of lines from a real song.
+
 ## [0.3.1] — 2026-11-04
 
 ### Fixed
