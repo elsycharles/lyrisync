@@ -433,7 +433,9 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
     animation: none !important;
   }
@@ -2559,4 +2561,168 @@ html.no-scroll body {
 /* Room for the mini player, so it never covers the last lines. */
 .result--mini {
   padding-bottom: 72px;
+}
+
+/* --- motion: soft and short, never in the way (off with prefers-reduced-motion) --- */
+
+/* No sideways jump when a screen is taller or shorter than the window, or a list starts
+   to scroll: the scrollbar's room is always kept. */
+html,
+.lines--scroll {
+  scrollbar-gutter: stable;
+}
+
+/* Open/close of disclosures where the browser can animate to "auto". */
+:root {
+  interpolate-size: allow-keywords;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/* Controls answer the pointer: colours ease, presses give a little. */
+.btn,
+.btn-link,
+.tool-btn,
+.icon-btn,
+.transport,
+.play,
+.speed,
+.chip,
+.segmented button,
+.option,
+.line,
+.line-tools__nudge button,
+.history-item,
+.checklist__mark,
+.step__icon {
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+/* The line being sung lights up gently rather than snapping. */
+.line.line--active,
+.line.line--active time {
+  transition-duration: var(--dur);
+}
+
+.btn:not(:disabled):active,
+.tool-btn:not(:disabled):active,
+.icon-btn:active,
+.transport:active,
+.play:active,
+.speed:active,
+.segmented button:active,
+.line-tools__nudge button:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+/* Each screen arrives instead of popping in. */
+.main > * {
+  animation: rise-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+/* Things that appear: notices, the resume banner, a field being typed, errors. */
+.notice,
+.line--editing,
+.hint--error,
+.history-item,
+.versions {
+  animation: rise-in var(--dur) var(--ease-out) backwards;
+}
+
+/* The list or the .lrc text, switched with the view tabs. */
+.result__view > * {
+  animation: fade-in var(--dur) var(--ease-out) backwards;
+}
+
+/* A line's tools open and close by sliding, so the lines below move smoothly. */
+.reveal {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows var(--dur) var(--ease-out),
+    opacity var(--dur) var(--ease-out);
+}
+
+@starting-style {
+  .reveal {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+.reveal--closing {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.reveal__inner {
+  min-height: 0;
+  overflow: clip;
+  overflow-clip-margin: 6px;
+}
+
+/* The stage: the lines before and after fade with the current one. */
+.lyrics-stage__prev,
+.lyrics-stage__next {
+  animation: fade-in var(--dur-slow) var(--ease-out) backwards;
+}
+
+/* Full screen fades in; the mini player rises from the bottom edge. */
+.stage-card--focus {
+  animation: fade-in var(--dur) var(--ease-out);
+}
+
+.mini-player {
+  animation: slide-up var(--dur) var(--ease-out) backwards;
+}
+
+/* Disclosures (track info) unfold where supported. */
+.settings::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition:
+    block-size var(--dur) var(--ease-out),
+    content-visibility var(--dur) allow-discrete;
+}
+
+.settings[open]::details-content {
+  block-size: auto;
+}
+
+/* Switching theme: colours fade for a moment instead of snapping. */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition:
+    background-color 300ms var(--ease-in-out),
+    border-color 300ms var(--ease-in-out),
+    color 300ms var(--ease-in-out),
+    fill 300ms var(--ease-in-out),
+    stroke 300ms var(--ease-in-out) !important;
 }
