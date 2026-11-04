@@ -10,7 +10,7 @@ import type { SaveStatus } from '../state/useProjectHistory';
 import { ConfidenceChip } from './ConfidenceChip';
 import { DownloadIcon, UndoIcon } from './icons';
 import { LyricList, isToCheck } from './LyricList';
-import { currentLineIndex, playLine } from './LineTools';
+import { currentLineIndex, INTRO_ID, playLine } from './LineTools';
 import { LyricsStage } from './LyricsStage';
 import { Player } from './Player';
 import { lineShortcuts, modKey, Shortcuts } from './Shortcuts';
@@ -61,6 +61,13 @@ export function ResultScreen(props: Props) {
   const fixUntimed = () => {
     const first = lines.findIndex((l) => l.time === null);
     if (first < 0) return;
+    if (first === 0) {
+      // Nothing before it: the intro, from the start; "set & next" as it ends.
+      setSelectedId(INTRO_ID);
+      ctrl.seek(0);
+      void ctrl.play();
+      return;
+    }
     const before = lines[first - 1] ?? lines[first]!;
     setSelectedId(before.id);
     const cue = lines[previousTimedIndex(lines, first)];
@@ -141,7 +148,15 @@ export function ResultScreen(props: Props) {
             </div>
           )}
 
-          {untimed > 0 && (
+          {untimed > 0 && untimed === lines.length && (
+            <div className="notice notice--row" role="status">
+              <span>{t.result.manualNotice}</span>
+              <button type="button" className="btn btn--primary btn--small" onClick={fixUntimed}>
+                {t.result.manualStart}
+              </button>
+            </div>
+          )}
+          {untimed > 0 && untimed < lines.length && (
             <div className="notice notice--row" role="status">
               <span>{t.result.untimedNotice(untimed)}</span>
               <button type="button" className="btn-link" onClick={fixUntimed}>

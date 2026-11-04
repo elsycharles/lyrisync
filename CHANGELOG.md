@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Timing by hand, with no model to download: "or time the lines myself" on the import
+  screen (and "Time it myself" when a sync fails) opens the lyrics untimed on the
+  review screen. A "♪ Intro" row before the first line takes "Set & next" as the intro
+  ends, which starts the first line; then "Set & next" as each line ends. The intro's
+  ＋ also adds a line at the very top.
+
 ## [0.2.0] — 2026-11-04
 
 ### Changed

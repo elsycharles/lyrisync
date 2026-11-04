@@ -15,6 +15,7 @@ function setup(overrides: Partial<Parameters<typeof ImportScreen>[0]> = {}) {
     onSettingsChange: vi.fn(),
     device: 'wasm' as const,
     onSync: vi.fn(),
+    onManual: vi.fn(),
     onOpenLrc: vi.fn(),
     ...overrides,
   };
@@ -37,6 +38,18 @@ describe('ImportScreen', () => {
     expect(checklist.querySelectorAll('.is-ok')).toHaveLength(1);
   });
 
+  it('offers to time the lines by hand, with no model, once lyrics and audio are there', async () => {
+    setup({ lyricsText: 'One line' });
+    expect(screen.getByRole('button', { name: /time the lines myself, with no model/ })).toBeDisabled();
+  });
+
+  it('starts manual timing when ready', async () => {
+    const props = setup({ lyricsText: 'One line\nTwo lines', audio });
+    await userEvent.click(screen.getByRole('button', { name: /time the lines myself, with no model/ }));
+    expect(props.onManual).toHaveBeenCalledOnce();
+    expect(props.onSync).not.toHaveBeenCalled();
+  });
+
   it('starts the sync when ready', async () => {
     const props = setup({ lyricsText: 'One line\nTwo lines', audio });
     expect(screen.getAllByText('2 lines').length).toBeGreaterThan(0);
@@ -56,8 +69,6 @@ describe('ImportScreen', () => {
     const props = setup({ lyricsText: '[00:01.00]a\n[00:02.00]b', audio });
     await userEvent.click(screen.getByRole('button', { name: 'Open it' }));
     expect(props.onOpenLrc).toHaveBeenCalledOnce();
-    // There is no manual mode any more: the review screen fixes everything.
-    expect(screen.queryByRole('button', { name: /time the lines myself/ })).not.toBeInTheDocument();
   });
 
   it('imports lyrics or an .lrc from a file', async () => {

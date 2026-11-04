@@ -8,7 +8,7 @@ import { insertLineAfter, removeLine, setLineText } from '../lib/lineEdits';
 import { formatTimestamp } from '../lib/time';
 import { activeLineIndex, outOfOrderIds } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
-import { LineTools } from './LineTools';
+import { INTRO_ID, IntroTools, LineTools } from './LineTools';
 import { useLineEditing } from './useLineEditing';
 
 /** An automatically placed line whose timing is less certain than the rest. */
@@ -80,8 +80,8 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
     } else {
       // A new line is only added once it has a text; the line before stays selected, so
       // "set & next" pressed as it finishes gives the new line its start.
-      const index = lines.findIndex((l) => l.id === editing.afterId);
-      if (text !== null && text.trim() && index >= 0) onEdit?.(insertLineAfter(lines, index, text).lines);
+      const index = editing.afterId === INTRO_ID ? -1 : lines.findIndex((l) => l.id === editing.afterId);
+      if (text !== null && text.trim() && (index >= 0 || editing.afterId === INTRO_ID)) onEdit?.(insertLineAfter(lines, index, text).lines);
       if (byKey) refocus.current = editing.afterId;
     }
     setEditing(null);
@@ -94,8 +94,43 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
     setSelectedId((out[index] ?? out[index - 1])?.id ?? null);
   };
 
+  const introSelected = selectedId === INTRO_ID;
+  const addingFirst = editing?.kind === 'add' && editing.afterId === INTRO_ID;
+
   return (
     <ol className="lines lines--scroll" ref={listRef} aria-label={t.result.linesLabel} {...spaceToggleProps(() => ctrl.toggle())}>
+      {editable && (
+        // Before the first line: "set & next" here, as the intro ends, starts the first line.
+        <li data-id={INTRO_ID}>
+          <button
+            type="button"
+            className={['line', 'line--intro', active < 0 && 'line--active', introSelected && 'line--selected'].filter(Boolean).join(' ')}
+            aria-current={active < 0 ? 'true' : undefined}
+            aria-pressed={introSelected}
+            onClick={() => setSelectedId(introSelected ? null : INTRO_ID)}
+            onDoubleClick={() => {
+              setSelectedId(INTRO_ID);
+              edit.playIntro();
+            }}
+          >
+            <time>{formatTimestamp(0)}</time>
+            <span className="line__text">♪ {t.result.intro}</span>
+          </button>
+          {introSelected && !editing && (
+            <IntroTools
+              onSetNext={() => edit.setNext(INTRO_ID)}
+              onPlay={edit.playIntro}
+              onNext={edit.next}
+              onAddFirst={() => setEditing({ kind: 'add', afterId: INTRO_ID })}
+            />
+          )}
+        </li>
+      )}
+      {addingFirst && (
+        <li>
+          <LineTextField time={null} initial="" placeholder={t.editor.newLine} onDone={finishEditing} />
+        </li>
+      )}
       {lines.map((line, i) => {
         const isActive = i === active;
         const isSelected = line.id === selectedId;
@@ -143,7 +178,6 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
               {editable && isSelected && !editing && (
                 <LineTools
                   line={line}
-                  isFirst={i === 0}
                   isLast={i === lines.length - 1}
                   onNudge={(d) => edit.nudge(line.id, d)}
                   onSetNext={() => edit.setNext(line.id)}

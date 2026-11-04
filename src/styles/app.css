@@ -2430,3 +2430,19 @@ button.line.line--active:not(:disabled):hover {
     order: 3;
   }
 }
+
+/* "Or time the lines myself": under the main button, quiet. */
+.cta__manual {
+  align-self: center;
+  font-size: 13px;
+}
+
+/* The intro row: not a lyric line, the stretch before the first one. */
+.line--intro .line__text {
+  color: var(--muted);
+}
+
+.line--intro.line--active .line__text,
+.line--intro.line--selected .line__text {
+  color: inherit;
+}

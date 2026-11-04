@@ -17,7 +17,7 @@ test('nothing is lost: reload, resume, browse the versions, restore one, delete'
   await expect(page.getByRole('textbox', { name: 'Lyrics' })).toHaveValue(LRC);
   await expect(page.getByText('Your last work is saved: “Stay a Little Longer”', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Resume' }).click();
-  await expect(list.locator('time').first()).toHaveText('00:09.90');
+  await expect(list.getByText('Stay a little longer').locator('..').locator('time')).toHaveText('00:09.90');
   await expect(page.locator('.stage-card .times')).toContainText('0:12');
 
   // The history: each change is a version; going back to an older one is a version too.
@@ -28,7 +28,7 @@ test('nothing is lost: reload, resume, browse the versions, restore one, delete'
   await item.getByRole('button', { name: 'Versions' }).click();
   await expect(item.locator('.versions__item')).toHaveText([/Line 1 retimed.*Current version/, /\.lrc file opened.*Restore/]);
   await item.getByRole('button', { name: 'Restore' }).click();
-  await expect(list.locator('time').first()).toHaveText('00:09.80');
+  await expect(list.getByText('Stay a little longer').locator('..').locator('time')).toHaveText('00:09.80');
   await page.getByRole('banner').getByRole('button', { name: 'History' }).click();
   await expect(item).toContainText('3 versions');
 

@@ -13,9 +13,11 @@ interface Props {
   onCancel: () => void;
   onRetry: () => void;
   onBack: () => void;
+  /** Time the lines by hand instead (no model needed). */
+  onManual: () => void;
 }
 
-export function ProcessingScreen({ state, onCancel, onRetry, onBack }: Props) {
+export function ProcessingScreen({ state, onCancel, onRetry, onBack, onManual }: Props) {
   const { t, lang } = useI18n();
   const elapsed = useElapsedSeconds();
 
@@ -42,6 +44,9 @@ export function ProcessingScreen({ state, onCancel, onRetry, onBack }: Props) {
           <div className="btn-row">
             <button type="button" className="btn btn--ghost" onClick={onBack}>
               {t.processing.back}
+            </button>
+            <button type="button" className="btn btn--ghost" onClick={onManual}>
+              {t.processing.manual}
             </button>
             <button type="button" className="btn btn--primary" onClick={onRetry}>
               {t.processing.retry}

@@ -23,7 +23,8 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
   - numbers are spelled out ("le 9" → "le neuf");
   - Arabizi is read ("ga3ma"), and look-alike Cyrillic letters are fixed.
 - **One screen to check and fix.** Listen with the lyrics on screen, then fix lines in place while the music plays:
-  - "Set & next" (C) as a line finishes: the next one starts at that moment;
+  - "Set & next" (C) as a line finishes: the next one starts at that moment (on the "♪ Intro" row, as the intro ends: the first line starts);
+  - or time everything by hand, with no model to download at all;
   - "Previous" / "Next" (Backspace / N) move between lines, the music with them;
   - ±0.1 s / ±1 s nudges per line, a slower playback speed, and undo;
   - edit a line's text in place, add a line after it or delete it, or edit the whole file as .lrc text.
