@@ -1384,6 +1384,16 @@ button.line--active:not(:disabled):hover {
   border-style: dashed;
 }
 
+/* Not timed yet, but nothing is wrong: the lines still ahead when timing by hand. */
+.line--pending {
+  border-color: var(--line);
+  border-style: dashed;
+}
+
+.line.line--pending .flag {
+  color: var(--muted);
+}
+
 .line .flag {
   color: var(--error-text);
   font-weight: 600;
@@ -1641,9 +1651,9 @@ button.line--active:not(:disabled):hover {
   }
 }
 
-/* Keyboard tips mean nothing on a touch screen. */
+/* Keyboard tips mean nothing on a touch screen (doubled class: wins over .shortcuts). */
 @media (pointer: coarse) {
-  .hint--keyboard {
+  .hint--keyboard.hint--keyboard {
     display: none;
   }
 }
@@ -1667,8 +1677,22 @@ button.line--active:not(:disabled):hover {
 
 .stage-card__head {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.stage-card__names {
+  display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+.stage-card__focus {
+  flex: none;
+  width: 32px;
+  height: 32px;
 }
 
 .stage-card__title {
@@ -2445,4 +2469,94 @@ button.line.line--active:not(:disabled):hover {
 .line--intro.line--active .line__text,
 .line--intro.line--selected .line__text {
   color: inherit;
+}
+
+/* --- watching the lyrics: full screen, and the mini player on phones --- */
+html.no-scroll,
+html.no-scroll body {
+  overflow: hidden;
+}
+
+/* Only the stage, filling the screen: what to watch while the song plays. */
+.stage-card.stage-card--focus {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  border-radius: 0;
+  border: none;
+  justify-content: space-between;
+  padding: max(20px, env(safe-area-inset-top)) clamp(20px, 5vw, 64px) max(20px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+}
+
+.stage-card--focus > * {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+.stage-card--focus .lyrics-stage {
+  --stage-line: clamp(26px, 5.4vw, 54px);
+  flex: 1;
+  justify-content: center;
+  gap: clamp(10px, 2vh, 20px);
+}
+
+.stage-card--focus .lyrics-stage__prev,
+.stage-card--focus .lyrics-stage__next {
+  font-size: clamp(16px, 2.6vw, 24px);
+  white-space: normal;
+}
+
+.stage-card--focus .lyrics-stage__meta {
+  font-size: 12px;
+}
+
+/* While the stage is out of view: play/pause and the line being sung, at the bottom. */
+.mini-player {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  color: #fff;
+  background: linear-gradient(170deg, #2a2150 0%, var(--ls-base) 100%);
+  border-top: 1px solid rgba(155, 130, 255, 0.24);
+  box-shadow: 0 -8px 24px rgba(17, 12, 36, 0.28);
+}
+
+.mini-player .transport {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: #fff;
+}
+
+.mini-player .play {
+  background: #fff;
+  color: var(--ls-base);
+}
+
+.mini-player .transport:focus-visible,
+.mini-player .play:focus-visible {
+  outline-color: #9b82ff;
+}
+
+.mini-player__line {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Room for the mini player, so it never covers the last lines. */
+.result--mini {
+  padding-bottom: 72px;
 }

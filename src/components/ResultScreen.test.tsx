@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useReducer } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -89,9 +89,11 @@ class FakeAudio extends AudioController {
   }
   override async play() {
     this.playing = true;
+    this.emit();
   }
   override pause() {
     this.playing = false;
+    this.emit();
   }
   override seek(t: number) {
     this.now = t;
@@ -417,5 +419,49 @@ describe('timing by hand from the intro', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Add a line after' }));
     await userEvent.type(screen.getByRole('textbox', { name: 'Line text' }), 'Oh{Enter}');
     expect(latest.map((l) => l.text)).toEqual(['Oh', 'Stay a little longer', 'The harbour falls asleep behind us', 'You already know how it ends']);
+  });
+});
+
+describe('watching the lyrics', () => {
+  it('shows only the stage in full screen, until Escape or the button', async () => {
+    render(<Editable ctrl={new FakeAudio()} />);
+    const stage = document.querySelector('.stage-card')!;
+    await userEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    expect(stage).toHaveClass('stage-card--focus');
+    expect(document.documentElement).toHaveClass('no-scroll');
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(stage).not.toHaveClass('stage-card--focus');
+    expect(document.documentElement).not.toHaveClass('no-scroll');
+    await userEvent.click(screen.getByRole('button', { name: 'Full screen' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Exit full screen' }));
+    expect(stage).not.toHaveClass('stage-card--focus');
+  });
+
+  it('keeps play/pause at hand in a mini player while the stage is out of view', async () => {
+    let report: (visible: boolean) => void = () => {};
+    class FakeObserver {
+      constructor(cb: (entries: { isIntersecting: boolean }[]) => void) {
+        report = (visible) => cb([{ isIntersecting: visible }]);
+      }
+      observe() {}
+      disconnect() {}
+    }
+    const original = window.IntersectionObserver;
+    window.IntersectionObserver = FakeObserver as unknown as typeof IntersectionObserver;
+    try {
+      const ctrl = new FakeAudio();
+      render(<Editable ctrl={ctrl} />);
+      expect(screen.queryByRole('region', { name: 'Player' })).not.toBeInTheDocument();
+      act(() => report(false)); // scrolled down to the lines
+      const mini = screen.getByRole('region', { name: 'Player' });
+      await userEvent.click(within(mini).getByRole('button', { name: 'Play' }));
+      expect(ctrl.playing).toBe(true);
+      await userEvent.click(within(mini).getByRole('button', { name: 'Pause' }));
+      expect(ctrl.playing).toBe(false);
+      act(() => report(true));
+      expect(screen.queryByRole('region', { name: 'Player' })).not.toBeInTheDocument();
+    } finally {
+      window.IntersectionObserver = original;
+    }
   });
 });

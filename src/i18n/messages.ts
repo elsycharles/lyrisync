@@ -110,6 +110,7 @@ export const fr = {
     speedHint: 'Ralentir aide à viser sur les passages rapides',
     prevLine: 'Ligne précédente',
     nextLine: 'Ligne suivante',
+    mini: 'Lecteur',
   },
   result: {
     title: 'Résultat',
@@ -125,6 +126,8 @@ export const fr = {
     lrcEmpty: 'Ce texte ne contient aucune ligne de paroles : rien n’a été changé.',
     linesCount: (n: number) => (n <= 1 ? `${n} ligne` : `${n} lignes`),
     nowPlaying: 'En cours',
+    focus: 'Plein écran',
+    exitFocus: 'Quitter le plein écran',
     next: 'Ensuite',
     intro: 'Intro',
     end: 'Fin du morceau',
@@ -352,6 +355,7 @@ export const en: Messages = {
     speedHint: 'Slowing down helps you aim on fast passages',
     prevLine: 'Previous line',
     nextLine: 'Next line',
+    mini: 'Player',
   },
   result: {
     title: 'Result',
@@ -367,6 +371,8 @@ export const en: Messages = {
     lrcEmpty: 'This text has no lyric lines: nothing was changed.',
     linesCount: (n: number) => (n === 1 ? `${n} line` : `${n} lines`),
     nowPlaying: 'Now',
+    focus: 'Full screen',
+    exitFocus: 'Exit full screen',
     next: 'Next',
     intro: 'Intro',
     end: 'End of the track',
