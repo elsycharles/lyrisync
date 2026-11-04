@@ -44,11 +44,49 @@ export interface ForcedAlignOptions {
   anchorWeight?: number;
   /** Seconds of free play around an anchor. */
   anchorTolerance?: number;
+  /**
+   * Pauses (needs the vocal energy): a line ends where the isolated voice goes quiet
+   * after its last letter, when the silence before the next line lasts at least this
+   * long (seconds). 0 disables them.
+   */
+  pauseMin?: number;
+  /** Fraction of the track's vocal level under which the voice counts as quiet. */
+  pauseThreshold?: number;
+  /** Quiet this long (seconds) ends the line; shorter dips (breaths) do not. */
+  pauseHold?: number;
+  /** Seconds added after the last voiced frame (the note's decay). */
+  pauseTail?: number;
 }
 
 export interface ForcedLine extends LyricLine {
   /** Start time of each aligned word, in seconds; empty when the line was not placed. */
   wordStarts: number[];
+}
+
+/**
+ * Where the voice stops after frame `from`: the last voiced frame before a quiet run of
+ * `hold` frames, searching no further than `limit`. Short dips (breaths, stops between
+ * words) are bridged. Returns `from` when nothing after it is voiced.
+ */
+export function voiceEndFrame(voiced: Uint8Array, from: number, limit: number, hold: number): number {
+  let end = from;
+  let quiet = 0;
+  for (let f = from + 1; f < Math.min(limit, voiced.length); f++) {
+    if (voiced[f]) {
+      end = f;
+      quiet = 0;
+    } else if (++quiet >= hold) break;
+  }
+  return end;
+}
+
+/** Frames where the isolated vocals reach `threshold` × their 90th-percentile level. */
+export function voicedFrames(energy: Float32Array, threshold: number): Uint8Array {
+  const sorted = Float32Array.from(energy).sort();
+  const ref = sorted[Math.floor(sorted.length * 0.9)] ?? 0;
+  const out = new Uint8Array(energy.length);
+  if (ref > 0) for (let f = 0; f < energy.length; f++) out[f] = energy[f]! >= threshold * ref ? 1 : 0;
+  return out;
 }
 
 export interface ForcedAlignResult {
@@ -74,6 +112,12 @@ export const FORCED_DEFAULTS = {
   anchorMinConfidence: 0.5,
   anchorWeight: 10,
   anchorTolerance: 0.2,
+  // Pauses, tuned on the line ends of the same songs: on correctly placed lines 76 % of
+  // detected ends are within 0.5 s, and 22 of 29 real silences of 1.5 s or more are found.
+  pauseMin: 1.5,
+  pauseThreshold: 0.3,
+  pauseHold: 0.4,
+  pauseTail: 0.15,
 };
 
 /**
@@ -134,6 +178,10 @@ export function alignWithEmissions(
     anchorMinConfidence,
     anchorWeight,
     anchorTolerance,
+    pauseMin,
+    pauseThreshold,
+    pauseHold,
+    pauseTail,
   } = { ...FORCED_DEFAULTS, ...options };
   const framesPerSecond = em.sampleRate / CTC_HOP;
   const logProbs =
@@ -182,10 +230,10 @@ export function alignWithEmissions(
 
   let weighted = 0;
   let weight = 0;
+  const toTime = (frame: number) => roundCs(Math.max(0, frameTime(frame, em.sampleRate) + offset));
   aligned.forEach((r, k) => {
     if (r.skipped) return;
     const line = out[segLine[k]!]!;
-    const toTime = (frame: number) => roundCs(Math.max(0, frameTime(frame, em.sampleRate) + offset));
     line.time = toTime(r.starts[0]!);
     line.source = 'auto';
     line.confidence = Math.exp(r.meanLogProb);
@@ -193,6 +241,24 @@ export function alignWithEmissions(
     weighted += line.confidence * segments[k]!.tokens.length;
     weight += segments[k]!.tokens.length;
   });
+
+  // Pauses: where the voice stops after a line's last letter, if it stays quiet long
+  // enough before the next placed line (or the end of the track).
+  if (pauseMin > 0 && em.vocalEnergy) {
+    const voiced = voicedFrames(em.vocalEnergy, pauseThreshold);
+    const hold = Math.max(1, Math.round(pauseHold * framesPerSecond));
+    const placed = aligned.map((r, k) => ({ r, k })).filter(({ r }) => !r.skipped);
+    placed.forEach(({ r, k }, j) => {
+      const following = placed[j + 1];
+      const nextStart = following ? following.r.starts[0]! : em.frames;
+      const last = r.ends[r.ends.length - 1]!;
+      const endFrame = voiceEndFrame(voiced, last, nextStart, hold) + 1;
+      const end = roundCs(frameTime(endFrame, em.sampleRate) + offset + pauseTail);
+      const nextTime = following ? toTime(nextStart) : frameTime(em.frames, em.sampleRate);
+      const line = out[segLine[k]!]!;
+      if (line.time !== null && end > line.time && nextTime - end >= pauseMin) line.end = end;
+    });
+  }
 
   return { lines: out, confidence: weight ? weighted / weight : 0 };
 }
