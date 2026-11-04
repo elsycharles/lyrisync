@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- A smoother interface: screens arrive with a short fade, a line's tools slide open and
+  closed (moving the selection no longer makes the lines below jump), the line being
+  sung and the selection light up gently, buttons give a little when pressed, notices
+  and the mini player rise in, the stage's lines fade, full screen fades in, and the
+  theme fades from one to the other. The scrollbar's room is always kept, so the page
+  no longer shifts sideways between screens. Everything stays still when the device
+  asks for reduced motion.
+
 ## [0.3.2] — 2026-11-04
 
 ### Added

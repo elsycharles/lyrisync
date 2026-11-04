@@ -44,7 +44,7 @@ export function LyricsStage({ lines, ctrl }: { lines: LyricLine[]; ctrl: AudioCo
         <span>{current ? t.result.nowPlaying : t.result.intro}</span>
         {current?.time != null && <time>{formatTimestamp(current.time)}</time>}
       </div>
-      <p className="lyrics-stage__prev" aria-hidden="true">
+      <p className="lyrics-stage__prev" aria-hidden="true" key={`prev-${prev?.id ?? 'none'}`}>
         {prev?.text ?? ' '}
       </p>
       {/* key: each new line fades in rather than swapping in place */}
@@ -54,7 +54,7 @@ export function LyricsStage({ lines, ctrl }: { lines: LyricLine[]; ctrl: AudioCo
       <span className="lyrics-stage__progress" aria-hidden="true">
         <span ref={fillRef} />
       </span>
-      <p className="lyrics-stage__next">
+      <p className="lyrics-stage__next" key={`next-${next?.id ?? 'none'}`}>
         {next ? (
           <>
             <span className="visually-hidden">{t.result.next} : </span>
