@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-11-04
+
 ### Changed
 
 - A smoother interface: screens arrive with a short fade, a line's tools slide open and
@@ -160,7 +162,8 @@ First MVP release.
 - Installable PWA that works offline after the first run.
 - COOP/COEP headers for Cloudflare Pages and Netlify.
 
-[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.3.2...develop
+[Unreleased]: https://github.com/elsycharles/lyrisync/compare/v0.4.0...develop
+[0.4.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.4.0
 [0.3.2]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.2
 [0.3.1]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.1
 [0.3.0]: https://github.com/elsycharles/lyrisync/releases/tag/v0.3.0
