@@ -13,6 +13,19 @@ All notable changes to this project are documented here. The format follows
   review screen. A "♪ Intro" row before the first line takes "Set & next" as the intro
   ends, which starts the first line; then "Set & next" as each line ends. The intro's
   ＋ also adds a line at the very top.
+- Watching on a phone: "Full screen" on the stage shows only the lyrics, large (true
+  full screen where the browser allows it, the screen kept awake); and while the stage
+  is scrolled out of view, a mini player at the bottom keeps play/pause, ⏮ / ⏭ and the
+  line being sung at hand.
+
+### Fixed
+
+- On a phone, playback no longer scrolls the whole page down to the sung line (the
+  player went out of view, so pausing was impossible): only the line list follows the
+  music, and it waits a few seconds after you scroll it yourself.
+- Keyboard tips were shown on touch screens.
+- Lines not timed yet at the end of the list (timing by hand) look calm instead of
+  like errors; a gap between timed lines is still marked.
 
 ## [0.2.0] — 2026-11-04
 
