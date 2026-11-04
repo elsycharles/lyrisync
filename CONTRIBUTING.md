@@ -1,5 +1,7 @@
 # Contributing
 
+By contributing, you agree that your contribution is licensed under the project's license, the [GNU AGPL v3.0 or later](LICENSE).
+
 ## Branching model: Gitflow
 
 | Branch | Branches off | Merges into | Purpose |
