@@ -21,6 +21,8 @@ interface Props {
   onSync: () => void;
   /** Opens lyrics that already have timestamps (.lrc) on the review screen. */
   onOpenLrc: () => void;
+  /** The last saved work, to pick up where you left off. */
+  resume?: { title: string; when: string; onResume: () => void; onHistory: () => void } | null;
 }
 
 const LANGUAGES: LanguageChoice[] = ['auto', 'fr', 'en', 'mg'];
@@ -61,6 +63,20 @@ export function ImportScreen(props: Props) {
           </li>
         </ul>
       </header>
+
+      {props.resume && (
+        <div className="notice notice--row resume" role="status">
+          <span>{t.history.resumeNotice(props.resume.title, props.resume.when)}</span>
+          <span className="resume__actions">
+            <button type="button" className="btn btn--primary btn--small" onClick={props.resume.onResume}>
+              {t.history.resume}
+            </button>
+            <button type="button" className="btn-link" onClick={props.resume.onHistory}>
+              {t.history.title}
+            </button>
+          </span>
+        </div>
+      )}
 
       <div className="import__grid">
         <section className="card panel panel--lyrics" aria-labelledby={`${lyricsId}-title`}>

@@ -46,6 +46,16 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- History: every sync and every change is saved in the browser (IndexedDB) as it
+  happens, with the audio, so closing the page by mistake loses nothing. Each change
+  is noted at once in a small journal, so even a page closed a few milliseconds after
+  a change keeps it. The History screen (top bar) lists the projects with all their
+  versions ("Line 5 retimed", "Text of line 3 edited", ".lrc text edited"…): open one,
+  restore an older version (itself recorded as a version), or delete a project or
+  everything, after a confirmation. Nothing is ever deleted automatically, and the app
+  asks the browser for persistent storage. The import screen offers to pick up the
+  last work, and keeps the lyrics being typed.
+
 - Benchmark: `--profile DIR` keeps the downloaded models between runs, and editing the
   sources during a run no longer reloads its page.
 - Vocal isolation with Spleeter 2-stems (ONNX, STFT/iSTFT in TypeScript) and a vocal

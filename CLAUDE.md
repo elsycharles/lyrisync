@@ -31,6 +31,7 @@ Alignment changes also need the benchmark (see README "Benchmark"): `node script
 - Workers are cancelled by terminating them (`cancelSync()`); pending calls reject with `AbortError`.
 - COOP/COEP are required (multithreaded WASM). Any new cross-origin asset must be CORS-enabled; fonts are self-hosted for this reason.
 - Do not let model weights or ORT `.wasm` into the Workbox precache (see `vite.config.ts`).
+- History (src/state/historyStore.ts, useProjectHistory): every change of the lines is a version in IndexedDB, noted first in a localStorage journal so a closed page loses nothing. Never delete or prune history automatically: only the user does, from the History screen, after a confirmation.
 - Never download copyrighted audio (streaming services, YouTube) for tests: use JamendoLyrics (CC) or the user's own files with LRCLIB references.
 
 ## Design rules (from the visual identity)
