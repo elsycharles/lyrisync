@@ -30,11 +30,12 @@ export function nudgeLine(lines: LyricLine[], id: string, delta: number): LyricL
 
 /**
  * "This line ends now, the next one starts now": what "Set & next" does, pressed as the
- * line at `index` finishes. The next line gets the start; nothing follows the last line.
+ * line at `index` finishes (-1: the intro, so the first line starts). Nothing follows the
+ * last line.
  */
 export function startNextAt(lines: LyricLine[], index: number, t: number): LyricLine[] {
   const next = lines[index + 1];
-  if (index < 0 || !next) return lines;
+  if (index < -1 || !next) return lines;
   const out = lines.slice();
   out[index + 1] = withStart(next, t);
   return out;

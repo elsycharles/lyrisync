@@ -99,7 +99,9 @@ describe('"set & next"', () => {
     // An untimed line gets its start the same way.
     expect(startNextAt(lines, 1, 18.9)[2]).toMatchObject({ time: 18.9, source: 'manual' });
     expect(startNextAt(lines, 2, 25)).toBe(lines);
-    expect(startNextAt(lines, -1, 5)).toBe(lines);
+    // From the intro, the first line starts.
+    expect(startNextAt(lines, -1, 5)[0]).toMatchObject({ time: 5, source: 'manual' });
+    expect(startNextAt(lines, -2, 5)).toBe(lines);
   });
 
   it('flags lines timed before an earlier one', () => {

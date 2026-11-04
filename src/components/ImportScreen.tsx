@@ -19,6 +19,8 @@ interface Props {
   onSettingsChange: (patch: Partial<SyncSettings>) => void;
   device: Device;
   onSync: () => void;
+  /** Opens the lyrics untimed on the review screen, to time them by hand (no model). */
+  onManual: () => void;
   /** Opens lyrics that already have timestamps (.lrc) on the review screen. */
   onOpenLrc: () => void;
   /** The last saved work, to pick up where you left off. */
@@ -225,6 +227,9 @@ export function ImportScreen(props: Props) {
             </ul>
             <button type="button" className="btn btn--primary btn--big btn--block" disabled={!ready} onClick={props.onSync}>
               {t.import.sync}
+            </button>
+            <button type="button" className="btn-link cta__manual" disabled={!ready} onClick={props.onManual}>
+              {t.import.manual}
             </button>
           </div>
         </div>

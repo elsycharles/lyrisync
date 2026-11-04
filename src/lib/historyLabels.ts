@@ -6,6 +6,7 @@ import type { LyricLine } from './types';
  */
 export type VersionLabel =
   | { kind: 'sync' }
+  | { kind: 'manual' }
   | { kind: 'lrc-open' }
   | { kind: 'lrc-text' }
   | { kind: 'undo' }
