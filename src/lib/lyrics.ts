@@ -143,7 +143,7 @@ function isBareSection(line: string): boolean {
   return BARE_SECTION_RE.test(line.replace(/^\(|\)$/g, '').trim());
 }
 
-/** "Refrain - KIK & Flack" → "refrain"; "Couplet 2 : Flack" → "couplet 2"; "Chorus x2" → "chorus". */
+/** "Refrain - Artiste A & Artiste B" → "refrain"; "Couplet 2 : Artiste B" → "couplet 2"; "Chorus x2" → "chorus". */
 function sectionKey(header: string): string {
   return header
     .split(/\s*[:：]\s*|\s+[-–—]\s+|\s*\(|\s*\|/)[0]!
@@ -163,7 +163,7 @@ export function cleanGeniusPage(raw: string): string {
     .replace(/[\u200b-\u200d\u2060\ufeff]/g, '')
     .replace(/\t/g, ' ');
 
-  // "…Ratata Lyrics[Couplet 1]" and "Read More [Intro]": split glued headers onto their own line.
+  // "…Exemple Lyrics[Couplet 1]" and "Read More [Intro]": split glued headers onto their own line.
   text = text.replace(/(Lyrics|Read More)\s*\[/g, '$1\n[');
   text = text.replace(/You might also like\s*/gi, '\n');
 

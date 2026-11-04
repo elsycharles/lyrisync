@@ -25,7 +25,7 @@ const SYMBOLS: Record<NumberLanguage, Record<string, string>> = {
 
 /**
  * Arabizi (Latin-script Arabic, common in French rap): digits inside words stand for
- * sounds, "ga3ma" ≈ "gaama", "9alb" ≈ "qalb".
+ * sounds, "sa7bi" ≈ "sahbi", "9alb" ≈ "qalb".
  */
 const ARABIZI: Record<string, string> = { '2': 'a', '3': 'a', '5': 'kh', '6': 't', '7': 'h', '8': 'gh', '9': 'q' };
 
@@ -34,8 +34,8 @@ const ORDINAL_EN = /^(\d+)(?:st|nd|rd|th)$/;
 
 /**
  * Turns a lyric line into the words the acoustic model can align, in its alphabet:
- * "J'me dis, j'suis fou des fois (x2)" is handled upstream; here
- * "Pour elle j'peux die, j'peux sortir le 9" → ["pour", "elle", "j'peux", "die", "j'peux", "sortir", "le", "neuf"].
+ * repeat markers like "On y va (x2)" are handled upstream; here
+ * "Pour toi j'peux danser, j'en ai vu 9" → ["pour", "toi", "j'peux", "danser", "j'en", "ai", "vu", "neuf"].
  */
 export function romanizeLine(text: string, lang: NumberLanguage): string[] {
   let s = text.normalize('NFKC').replace(/[’‘`´ʼ′ʹ]/g, "'").replace(CONFUSABLE_RE, (c) => CONFUSABLES[c]!);

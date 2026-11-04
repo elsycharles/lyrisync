@@ -174,13 +174,13 @@ describe('real-world lyrics', () => {
   it('maps Cyrillic look-alike letters back to Latin', () => {
     // "Ellе" and "еu" below contain a Cyrillic е (U+0435), as pasted from a lyrics site.
     expect(tokenize('Ellе a еu')).toEqual(['elle', 'a', 'eu']);
-    const song = parseLyrics('Ellе est là quand ça va pas');
-    expect(alignLyrics(song, sing([51, 'Elle est là quand ça va pas'])).lines[0]!.time).toBe(51);
+    const song = parseLyrics('Ellе est là quand il pleut');
+    expect(alignLyrics(song, sing([51, 'Elle est là quand il pleut'])).lines[0]!.time).toBe(51);
   });
 
   it('does not penalise ad-libs in parentheses that were not heard', () => {
-    const song = parseLyrics("J'dépense la kich' comme si c'était rien (Mhmm)\nRATATATATA, (Yeaah) RATATATATA, (Yeaah) RATATATATA");
-    const words = sing([28, "j'dépense la kich comme si c'était rien"], [66, 'ratatatata ratatatata ratatatata']);
+    const song = parseLyrics("J'regarde la ville comme si c'était rien (Mhmm)\nPAPAPAPAPA, (Yeaah) PAPAPAPAPA, (Yeaah) PAPAPAPAPA");
+    const words = sing([28, "j'regarde la ville comme si c'était rien"], [66, 'papapapapa papapapapa papapapapa']);
     const r = alignLyrics(song, words);
     expect(times(r)).toEqual([28, 66]);
     expect(r.confidence).toBeCloseTo(1, 5);
@@ -195,9 +195,9 @@ describe('real-world lyrics', () => {
 
 describe('tokenizeLyricLine', () => {
   it('marks words in parentheses as optional, including an unclosed one', () => {
-    expect(tokenizeLyricLine('Tout, tout (Eheh) fin (oh')).toEqual([
-      { text: 'tout', optional: false },
-      { text: 'tout', optional: false },
+    expect(tokenizeLyricLine('Encore, encore (Eheh) fin (oh')).toEqual([
+      { text: 'encore', optional: false },
+      { text: 'encore', optional: false },
       { text: 'eheh', optional: true },
       { text: 'fin', optional: false },
       { text: 'oh', optional: true },
@@ -207,16 +207,16 @@ describe('tokenizeLyricLine', () => {
 
 describe('words split or joined differently', () => {
   it('matches one lyric word heard as two or three', () => {
-    const song = parseLyrics('Verse line before\nRATATATATA RATATATATA\nQuand elle chante le refrain de Ninao');
-    const words = sing([2, 'verse line before'], [10, 'rata rata rata tata'], [20, 'quand elle chante le refrain de Nina O']);
+    const song = parseLyrics('Verse line before\nPAPAPAPAPA PAPAPAPAPA\nQuand elle chante le refrain de Mirado');
+    const words = sing([2, 'verse line before'], [10, 'papa papa papa papa'], [20, 'quand elle chante le refrain de Mira Do']);
     const r = alignLyrics(song, words);
     expect(times(r)).toEqual([2, 10, 20]);
     expect(r.lines[2]!.confidence).toBeGreaterThan(0.95);
   });
 
   it('matches two lyric words heard as one', () => {
-    const song = parseLyrics('On a dit Bissla mah la vie');
-    const r = alignLyrics(song, sing([38.92, 'on a dit bisslamah la vie']));
+    const song = parseLyrics('On a dit Sola ny la vie');
+    const r = alignLyrics(song, sing([38.92, 'on a dit solany la vie']));
     expect(r.lines[0]!.time).toBe(38.92);
     expect(r.confidence).toBeGreaterThan(0.95);
   });
