@@ -21,26 +21,26 @@ describe('parseLyrics', () => {
 describe('Genius page leftovers', () => {
   it('removes the page header, suggestions and the Embed suffix', () => {
     const page = [
-      '31 ContributorsTranslationsEnglishFrançaisRatata Lyrics[Couplet 1 - KIK]',
-      'Elle me connait sur le bout des doigts',
-      "J'me dis j'suis fou des fois",
+      '31 ContributorsTranslationsEnglishFrançaisExemple Lyrics[Couplet 1 - Artiste A]',
+      'Elle connaît la ville par cœur',
+      "J'me dis qu'on a le temps",
       'You might also like',
-      '[Refrain - KIK & Flack]',
-      'Elle est là quand ça va pas',
-      'See KIK Live',
+      '[Refrain - Artiste A & Artiste B]',
+      'Elle est là quand il pleut',
+      'See Artiste A Live',
       'Get tickets as low as $45',
-      'Elle mérite tout, tout, tout, tout (Eheh)3Embed',
+      'On danse encore, encore, encore, encore (Eheh)3Embed',
     ].join('\n');
     expect(expandLyrics(page)).toEqual([
-      'Elle me connait sur le bout des doigts',
-      "J'me dis j'suis fou des fois",
-      'Elle est là quand ça va pas',
-      'Elle mérite tout, tout, tout, tout (Eheh)',
+      'Elle connaît la ville par cœur',
+      "J'me dis qu'on a le temps",
+      'Elle est là quand il pleut',
+      'On danse encore, encore, encore, encore (Eheh)',
     ]);
   });
 
   it('drops a song description before the first header', () => {
-    const page = 'Ratata est le premier single… Read More\n[Intro]\nYeah';
+    const page = 'Exemple est le premier single… Read More\n[Intro]\nYeah';
     expect(expandLyrics(page)).toEqual(['Yeah']);
   });
 
@@ -60,9 +60,9 @@ describe('look-alike letters', () => {
 
 describe('repeats', () => {
   it('expands line repeat markers', () => {
-    expect(expandLyrics('Pour elle j’peux die (x2)\nTout, tout ×3\nOn y va (bis)\nFin')).toEqual([
-      'Pour elle j’peux die', 'Pour elle j’peux die',
-      'Tout, tout', 'Tout, tout', 'Tout, tout',
+    expect(expandLyrics('Pour toi j’peux danser (x2)\nEncore, encore ×3\nOn y va (bis)\nFin')).toEqual([
+      'Pour toi j’peux danser', 'Pour toi j’peux danser',
+      'Encore, encore', 'Encore, encore', 'Encore, encore',
       'On y va', 'On y va',
       'Fin',
     ]);
@@ -78,8 +78,8 @@ describe('repeats', () => {
   });
 
   it('refills a section given by its header only', () => {
-    const text = '[Refrain : KIK & Flack]\nElle est là\nElle mérite tout\n\n[Couplet 2 : Flack]\nOn s’en fout\n\n[Refrain]\n\n[Outro]\nFin';
-    expect(expandLyrics(text)).toEqual(['Elle est là', 'Elle mérite tout', 'On s’en fout', 'Elle est là', 'Elle mérite tout', 'Fin']);
+    const text = '[Refrain : Artiste A & Artiste B]\nElle est là\nOn danse encore\n\n[Couplet 2 : Artiste B]\nOn s’en va\n\n[Refrain]\n\n[Outro]\nFin';
+    expect(expandLyrics(text)).toEqual(['Elle est là', 'On danse encore', 'On s’en va', 'Elle est là', 'On danse encore', 'Fin']);
   });
 
   it('does not treat words ending in x as repeat markers', () => {

@@ -21,7 +21,7 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
   - repeats are expanded: "(x2)", "×3", "(bis)", "[Chorus x2]", and a header with nothing under it means the chorus is sung again;
   - inline ad-libs in parentheses are made optional;
   - numbers are spelled out ("le 9" → "le neuf");
-  - Arabizi is read ("ga3ma"), and look-alike Cyrillic letters are fixed.
+  - Arabizi is read ("sa7bi"), and look-alike Cyrillic letters are fixed.
 - **One screen to check and fix.** Listen with the lyrics on screen, then fix lines in place while the music plays:
   - "Set & next" (C) as a line finishes: the next one starts at that moment (on the "♪ Intro" row, as the intro ends: the first line starts);
   - or time everything by hand, with no model to download at all;

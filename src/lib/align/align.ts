@@ -88,8 +88,8 @@ export function alignLyrics(
     const lyricText = lyricTokens.map((t) => t.text);
     const heardText = transcript.map((t) => t.text);
     // Candidate strings on each side, so one lyric word can match two or three heard
-    // words ("ratatatata" heard as "rata, rata") and two lyric words can match one
-    // ("Nina O" written "Ninao"). Indices: A = [words…, pairs…], B = [words…, bigrams…, trigrams…].
+    // words ("papapapapa" heard as "papa, papa") and two lyric words can match one
+    // ("Mira Do" written "Mirado"). Indices: A = [words…, pairs…], B = [words…, bigrams…, trigrams…].
     const lyricPairs = lyricText.map((t, k) => (k > 0 ? lyricText[k - 1]! + t : ''));
     const bigrams = heardText.map((t, k) => (k > 0 ? heardText[k - 1]! + t : ''));
     const trigrams = heardText.map((t, k) => (k > 1 ? heardText[k - 2]! + heardText[k - 1]! + t : ''));
@@ -143,7 +143,7 @@ export function alignLyrics(
           }
         }
         // Scored like a single match, so a pair never beats matching its words one by one,
-        // and never built with an ad-lib ("(Yeaah) ratatatata" is not one word).
+        // and never built with an ad-lib ("(Yeaah) papapapapa" is not one word).
         if (i >= 2 && !lyricTokens[a]!.optional && !lyricTokens[a - 1]!.optional) {
           const sp = pairToOne(a, b);
           const parts = Math.max(s, one(a - 1, b));

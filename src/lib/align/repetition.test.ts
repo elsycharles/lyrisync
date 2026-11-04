@@ -5,14 +5,14 @@ const split = (s: string) => s.split(' ');
 
 describe('hasRepetitionLoop', () => {
   it('flags Whisper decoding loops', () => {
-    expect(hasRepetitionLoop(split(Array(20).fill('rata,').join(' ')))).toBe(true);
+    expect(hasRepetitionLoop(split(Array(20).fill('papa,').join(' ')))).toBe(true);
     expect(hasRepetitionLoop(split(`A little ${Array(10).fill('bit of a').join(' ')} back`))).toBe(true);
     expect(hasRepetitionLoop(split(Array(8).fill('Tu as un hâteur,').join(' ')))).toBe(true);
   });
 
   it('leaves real sung repetitions alone', () => {
-    expect(hasRepetitionLoop(split('Elle mérite tout, tout, tout, tout'))).toBe(false);
-    expect(hasRepetitionLoop(split('RATATATATA, RATATATATA, (Yeaah) RATATATATA Pour elle j’peux die'))).toBe(false);
+    expect(hasRepetitionLoop(split('On danse encore, encore, encore, encore'))).toBe(false);
+    expect(hasRepetitionLoop(split('PAPAPAPAPA, PAPAPAPAPA, (Yeaah) PAPAPAPAPA pour toi j’reste là'))).toBe(false);
     expect(hasRepetitionLoop(split('on rejoue la même chanson on rejoue la même chanson'))).toBe(false);
   });
 });
@@ -29,7 +29,7 @@ describe('collapseLoops', () => {
   });
 
   it('does not touch normal text', () => {
-    const words = split('Elle mérite tout, tout, tout, tout Pour elle');
+    const words = split('On danse encore, encore, encore, encore pour toi');
     expect(collapseLoops(words, (w) => w)).toEqual(words);
   });
 });

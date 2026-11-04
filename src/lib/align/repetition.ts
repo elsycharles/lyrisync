@@ -1,7 +1,7 @@
 /**
- * Whisper sometimes falls into a decoding loop on music ("rata, rata, rata…" a hundred
+ * Whisper sometimes falls into a decoding loop on music ("papa, papa, papa…" a hundred
  * times, "a bit of a bit of…"). These helpers detect and remove such loops in a list
- * of words. Real lyrics repeat too ("tout, tout, tout, tout"), so only runs longer than
+ * of words. Real lyrics repeat too ("encore, encore, encore, encore"), so only runs longer than
  * any plausible sung repetition count as loops.
  */
 

@@ -13,12 +13,12 @@ const lines = (t: number): LyricLine[] => [
 ];
 
 async function seed() {
-  await historyStore.createProject({ id: 'p1', lyricsText: 'One\nTwo', metadata: { title: 'Ratata', artist: 'KIK' }, audio: null, duration: null });
-  await historyStore.addVersion('p1', { label: { kind: 'sync' }, lines: lines(1), metadata: { title: 'Ratata' }, confidence: 0.9 });
+  await historyStore.createProject({ id: 'p1', lyricsText: 'One\nTwo', metadata: { title: 'Demo Song', artist: 'Demo Artist' }, audio: null, duration: null });
+  await historyStore.addVersion('p1', { label: { kind: 'sync' }, lines: lines(1), metadata: { title: 'Demo Song' }, confidence: 0.9 });
   await historyStore.addVersion('p1', {
     label: { kind: 'edit', retimed: 1, retexted: 0, added: 0, removed: 0, line: 2 },
     lines: lines(1.5),
-    metadata: { title: 'Ratata', artist: 'KIK' },
+    metadata: { title: 'Demo Song', artist: 'Demo Artist' },
     confidence: null,
   });
   await historyStore.createProject({ id: 'p2', lyricsText: 'Hello', metadata: { title: 'Unfinished' }, audio: null, duration: null });
@@ -52,8 +52,8 @@ describe('HistoryScreen', () => {
   it('lists projects with their versions, and opens or restores them', async () => {
     await seed();
     const props = setup('p1');
-    const item = (await screen.findByText('Ratata')).closest('li')!;
-    expect(within(item).getByText('KIK')).toBeInTheDocument();
+    const item = (await screen.findByText('Demo Song')).closest('li')!;
+    expect(within(item).getByText('Demo Artist')).toBeInTheDocument();
     expect(within(item).getByText('Open now')).toBeInTheDocument();
     expect(within(item).getByText(/2 lines · 2 versions/)).toBeInTheDocument();
     // An unfinished sync can be resumed.
@@ -76,11 +76,11 @@ describe('HistoryScreen', () => {
     await seed();
     const props = setup();
     const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValue(true);
-    await userEvent.click(await screen.findByRole('button', { name: 'Delete “Ratata” from the history' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete “Demo Song” from the history' }));
     expect(await historyStore.listProjects()).toHaveLength(2); // declined
-    await userEvent.click(screen.getByRole('button', { name: 'Delete “Ratata” from the history' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete “Demo Song” from the history' }));
     await vi.waitFor(() => expect(props.onDeleted).toHaveBeenCalledWith('p1'));
-    await vi.waitFor(() => expect(screen.queryByText('Ratata')).not.toBeInTheDocument());
+    await vi.waitFor(() => expect(screen.queryByText('Demo Song')).not.toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: 'Clear everything' }));
     await vi.waitFor(() => expect(props.onCleared).toHaveBeenCalledOnce());
     expect(await screen.findByText(/Nothing yet/)).toBeInTheDocument();
