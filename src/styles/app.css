@@ -2092,11 +2092,6 @@ button.line.line--active:not(:disabled):hover {
   gap: 5px;
 }
 
-/* "Shift every line": the line nudge control, applied to the whole song. */
-.shift-all {
-  align-self: flex-start;
-}
-
 /* Narrow screens: flags go under the line's text instead of squeezing it. */
 @media (max-width: 480px) {
   .lines--scroll button.line {

@@ -28,11 +28,6 @@ export function nudgeLine(lines: LyricLine[], id: string, delta: number): LyricL
   return lines.map((l) => (l.id === id && l.time !== null ? withStart(l, l.time + delta) : l));
 }
 
-/** Moves every line in `ids` by `delta` seconds. Untimed lines are left alone. */
-export function shiftLines(lines: LyricLine[], ids: ReadonlySet<string>, delta: number): LyricLine[] {
-  return lines.map((l) => (ids.has(l.id) && l.time !== null ? withStart(l, l.time + delta) : l));
-}
-
 /**
  * "This line ends now, the next one starts now": what "Set & next" does, pressed as the
  * line at `index` finishes. The next line gets the start; nothing follows the last line.

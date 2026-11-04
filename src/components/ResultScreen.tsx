@@ -2,7 +2,7 @@ import { useCallback, useId, useState } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { useSpaceToggle } from '../hooks/useSpaceToggle';
 import { useI18n } from '../i18n/useI18n';
-import { countUntimed, nextTimedIndex, previousTimedIndex, shiftLines } from '../lib/timing';
+import { countUntimed, nextTimedIndex, previousTimedIndex } from '../lib/timing';
 import type { LrcMetadata, LyricLine } from '../lib/types';
 import { ConfidenceChip } from './ConfidenceChip';
 import { DownloadIcon, UndoIcon } from './icons';
@@ -59,9 +59,6 @@ export function ResultScreen(props: Props) {
     if (cue) playLine(ctrl, cue);
   };
 
-  const shiftAll = (delta: number) =>
-    props.onEdit(shiftLines(lines, new Set(lines.map((l) => l.id)), delta));
-
   return (
     <div className="result">
       <div className="result__side">
@@ -102,20 +99,6 @@ export function ResultScreen(props: Props) {
           <button type="button" className="btn btn--primary btn--big btn--block" onClick={props.onExport}>
             <DownloadIcon /> {t.result.export}
           </button>
-          <details className="settings">
-            <summary>{t.editor.shiftAll}</summary>
-            <div className="settings__stack">
-              <p className="hint">{t.editor.shiftAllHint}</p>
-              <div className="line-tools__nudge shift-all" role="group" aria-label={t.editor.shiftAll}>
-                {[-1, -0.1, 0.1, 1].map((d) => (
-                  <button key={d} type="button" onClick={() => shiftAll(d)} aria-label={t.editor.shiftAllBy(t.editor.seconds(d))}>
-                    {t.editor.seconds(d)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </details>
-
           <details className="settings">
             <summary>{t.result.metadata}</summary>
             <div className="settings__stack">

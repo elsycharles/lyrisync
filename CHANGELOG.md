@@ -33,8 +33,7 @@ All notable changes to this project are documented here. The format follows
     the next line starts at that moment and becomes the selected one;
   - moving between lines takes the music with it: ⏮ / ⏭ around play/pause, and
     "Previous" (Backspace) / "Next" (N) line tools that set nothing;
-  - "Shift every line" (±0.1 s / ±1 s) for a track that is early or late throughout,
-    a speed control (1×, 0.75×, 0.5×) in the player, and a warning on a line timed
+  - a speed control (1×, 0.75×, 0.5×) in the player, and a warning on a line timed
     before the previous one;
   - a pasted or imported .lrc opens straight on the review screen, and lyrics can be
     imported from a .txt or .lrc file. The "time the lines myself" mode is gone: every
