@@ -155,3 +155,31 @@ export function NextLineIcon({ size = 16, className }: IconProps) {
     </svg>
   );
 }
+
+export function PencilIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M10.6 2.9a1.6 1.6 0 0 1 2.3 0l.2.2a1.6 1.6 0 0 1 0 2.3L6.2 12.3 3 13l.7-3.2Z" />
+      <path d="M9.4 4.1l2.5 2.5" />
+    </svg>
+  );
+}
+
+export function PlusIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M8 3v10M3 8h10" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className}>
+      <path d="M2.8 4.3h10.4" />
+      <path d="M6.3 4.3V3c0-.5.4-.9.9-.9h1.6c.5 0 .9.4.9.9v1.3" />
+      <path d="M4.2 4.3l.6 8.3c.1.8.7 1.4 1.5 1.4h3.4c.8 0 1.4-.6 1.5-1.4l.6-8.3" />
+      <path d="M6.7 7v4.2M9.3 7v4.2" />
+    </svg>
+  );
+}

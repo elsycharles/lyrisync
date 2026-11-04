@@ -710,10 +710,24 @@ a {
   color: var(--ink);
 }
 
-.segmented button[aria-checked='true'] {
+.segmented button[aria-checked='true'],
+.segmented button[aria-selected='true'] {
   background: var(--surface);
   color: var(--ink);
   box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgba(31, 36, 48, 0.08);
+}
+
+/* A compact segmented control, sized to its labels (the lines view switch). */
+.segmented--small {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+}
+
+.segmented--small button {
+  flex: none;
+  font-size: 12.5px;
+  padding: 5px 10px;
 }
 
 /* Call to action with what is still missing. */
@@ -1475,6 +1489,14 @@ button.line--active:not(:disabled):hover {
   max-height: calc(100vh - 190px);
 }
 
+/* The list or the .lrc text, spaced like the rest of the card. */
+.result__view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 .track-text {
   display: flex;
   flex-direction: column;
@@ -1912,7 +1934,7 @@ button.line--active:not(:disabled):hover {
     width: 100%;
   }
 
-  .line-tools__group .tool-btn {
+  .line-tools__group .tool-btn:not(.tool-btn--icon) {
     flex: 1 1 auto;
     justify-content: center;
   }
@@ -2120,5 +2142,107 @@ button.line.line--active:not(:disabled):hover {
     min-width: 0;
     padding: 0 6px;
     font-size: 12.5px;
+  }
+}
+
+/* A square, icon-only button (undo by the line list). */
+.btn--icon {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+/* The line's text tools: edit, add after, delete. Icons only, set apart by a rule. */
+.line-tools__edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+}
+
+.tool-btn--icon {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+}
+
+.tool-btn--icon svg {
+  color: var(--muted);
+}
+
+.tool-btn--icon:not(:disabled):hover svg {
+  color: var(--accent);
+}
+
+.tool-btn--danger:not(:disabled):hover svg {
+  color: var(--error-text);
+}
+
+/* A line's text typed in place: same row, with a field instead of the text. */
+.line--editing {
+  align-items: center;
+  cursor: default;
+}
+
+.line__input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  margin: -4px 0;
+}
+
+.line__input:focus {
+  outline: 2px solid var(--accent-tint);
+  outline-offset: 0;
+}
+
+.line__keys {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* The whole .lrc as text. */
+.lrc-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.textarea--lrc {
+  min-height: 360px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.lrc-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 620px) {
+  .line__keys {
+    display: none;
+  }
+
+  .line-tools__edit {
+    margin-left: auto;
   }
 }

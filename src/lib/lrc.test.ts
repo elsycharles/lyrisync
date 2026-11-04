@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { looksLikeLrc, parseLrc, serializeLrc } from './lrc';
+import { looksLikeLrc, lrcForEditing, parseLrc, serializeLrc } from './lrc';
 import type { LyricLine } from './types';
 
 const line = (text: string, time: number | null): LyricLine => ({
@@ -67,11 +67,13 @@ describe('parseLrc', () => {
     expect(lines.map((l) => l.text)).toEqual(['Hello world']);
   });
 
-  it('keeps untimed lyric lines as needing timing', () => {
-    const { lines } = parseLrc('[00:01.00]Timed\nNot timed');
+  it('keeps untimed lyric lines as needing timing, where they were', () => {
+    const { lines } = parseLrc('Intro words\n[00:01.00]Timed\nNot timed\n[00:04.00]Later');
     expect(lines.map((l) => [l.text, l.time])).toEqual([
+      ['Intro words', null],
       ['Timed', 1],
       ['Not timed', null],
+      ['Later', 4],
     ]);
   });
 
@@ -79,6 +81,17 @@ describe('parseLrc', () => {
     const src = [line('Un', 1.5), line('Deux', 3.25), line('Trois', 75)];
     const { lines } = parseLrc(serializeLrc(src));
     expect(lines.map((l) => [l.text, l.time])).toEqual(src.map((l) => [l.text, l.time]));
+  });
+});
+
+describe('lrcForEditing', () => {
+  it('writes the tags and every line in list order, untimed ones bare, and reads back the same', () => {
+    const lines = [line('Un', 1.5), { id: 'x', text: 'Pas encore', time: null, source: null } as LyricLine, line('Deux', 3.25)];
+    const text = lrcForEditing(lines, { title: 'Titre', artist: 'Artiste', length: 200 });
+    expect(text).toBe('[ti:Titre]\n[ar:Artiste]\n[00:01.50]Un\nPas encore\n[00:03.25]Deux\n');
+    const back = parseLrc(text);
+    expect(back.lines.map((l) => [l.text, l.time])).toEqual(lines.map((l) => [l.text, l.time]));
+    expect(back.metadata).toEqual({ title: 'Titre', artist: 'Artiste' });
   });
 });
 

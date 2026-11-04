@@ -76,3 +76,38 @@ test('"set & next" while the music plays, "next" to move on, then export', async
   expect(lines[1]!.time).toBeLessThan(3.5);
   expect([lines[0]!.time, lines[2]!.time]).toEqual([1, 8]);
 });
+
+test('edit, add and delete lines, then fix the whole .lrc as text, and export', async ({ page }) => {
+  await page.goto('/');
+  await fillImport(page, LRC);
+  await page.getByRole('button', { name: 'Open it' }).click();
+  const list = page.getByRole('list', { name: 'Synced lines' });
+
+  await list.getByText('Stay a little longer').click();
+  await page.getByRole('button', { name: 'Edit the text' }).click();
+  await page.getByRole('textbox', { name: 'Line text' }).fill('Stay a while');
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Add a line after' }).click();
+  await page.getByRole('textbox', { name: 'Line text' }).fill('Just a little');
+  await page.keyboard.press('Enter');
+  await expect(list.getByText('Just a little')).toBeVisible();
+  await list.getByText('You already know how it ends').click();
+  await page.getByRole('button', { name: 'Delete the line' }).click();
+  await expect(list.getByText('You already know how it ends')).toHaveCount(0);
+
+  await page.getByRole('tab', { name: '.lrc text' }).click();
+  const text = page.getByRole('textbox', { name: 'Content of the .lrc file' });
+  await expect(text).toHaveValue(
+    '[ti:Stay a Little Longer]\n[00:09.80]Stay a while\nJust a little\n[00:14.25]The harbour falls asleep behind us\n',
+  );
+  // The new line gets its time right in the text; exporting applies it.
+  await text.fill('[ti:Stay a Little Longer]\n[00:09.80]Stay a while\n[00:12.00]Just a little\n[00:14.25]The harbour falls asleep behind us\n');
+  const lines = lrcLines((await exportLrc(page)).text);
+  expect(lines).toEqual([
+    { time: 9.8, text: 'Stay a while' },
+    { time: 12, text: 'Just a little' },
+    { time: 14.25, text: 'The harbour falls asleep behind us' },
+  ]);
+  await page.getByRole('tab', { name: 'List' }).click();
+  await expect(list.getByText('Just a little').locator('..').locator('time')).toHaveText('00:12.00');
+});

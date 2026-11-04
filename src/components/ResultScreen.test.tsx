@@ -4,7 +4,7 @@ import { useReducer } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { AudioController } from '../audio/AudioController';
 import { I18nProvider } from '../i18n/I18nProvider';
-import type { LyricLine } from '../lib/types';
+import type { LrcMetadata, LyricLine } from '../lib/types';
 import { initialProject, projectReducer } from '../state/project';
 import { ResultScreen } from './ResultScreen';
 
@@ -93,21 +93,24 @@ class FakeAudio extends AudioController {
 
 let latest: LyricLine[] = [];
 
-function Editable({ ctrl }: { ctrl: AudioController }) {
-  const [state, dispatch] = useReducer(projectReducer, { ...initialProject, lines });
+let latestMetadata: LrcMetadata = {};
+
+function Editable({ ctrl, onExport = vi.fn() }: { ctrl: AudioController; onExport?: () => void }) {
+  const [state, dispatch] = useReducer(projectReducer, { ...initialProject, lines, metadata: { title: 'Stay' } });
   latest = state.lines;
+  latestMetadata = state.metadata;
   return (
     <I18nProvider lang="en">
       <ResultScreen
         lines={state.lines}
         confidence={0.9}
-        metadata={{}}
+        metadata={state.metadata}
         ctrl={ctrl}
         canUndo={state.history.length > 0}
         onEdit={(l) => dispatch({ type: 'lines/edit', lines: l })}
         onUndo={() => dispatch({ type: 'lines/undo' })}
-        onMetadataChange={vi.fn()}
-        onExport={vi.fn()}
+        onMetadataChange={(m) => dispatch({ type: 'metadata/set', metadata: m })}
+        onExport={onExport}
         onRestart={vi.fn()}
       />
     </I18nProvider>
@@ -251,5 +254,110 @@ describe('moving between lines', () => {
     expect(ctrl.now).toBeCloseTo(9.3); // "Stay a little longer", minus the lead-in
     await userEvent.click(screen.getByRole('button', { name: 'Next line' }));
     expect(ctrl.now).toBeCloseTo(13.75); // the very next line, not one further
+  });
+});
+
+describe('editing the text', () => {
+  it('edits a line in place: Enter saves, Escape cancels', async () => {
+    render(<Editable ctrl={new FakeAudio()} />);
+    await userEvent.click(lineButton('The harbour falls asleep behind us'));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the text' }));
+    const field = screen.getByRole('textbox', { name: 'Line text' });
+    expect(field).toHaveValue('The harbour falls asleep behind us');
+    await userEvent.clear(field);
+    await userEvent.type(field, 'The harbour falls asleep{Enter}');
+    expect(latest[1]).toMatchObject({ id: 'b', text: 'The harbour falls asleep', time: 14.25 });
+    // Still selected, with its tools back.
+    expect(lineButton('The harbour falls asleep')).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'Edit the text' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Line text' }), ' nope{Escape}');
+    expect(latest[1]!.text).toBe('The harbour falls asleep');
+  });
+
+  it('adds a line after the selected one, in one undo step', async () => {
+    render(<Editable ctrl={new FakeAudio()} />);
+    await userEvent.click(lineButton('Stay a little longer'));
+    await userEvent.click(screen.getByRole('button', { name: 'Add a line after' }));
+    const field = screen.getByRole('textbox', { name: 'Line text' });
+    expect(field).toHaveValue('');
+    expect(field).toHaveAttribute('placeholder', 'New line');
+    await userEvent.type(field, 'Hold on{Enter}');
+    expect(latest.map((l) => [l.text, l.time])).toEqual([
+      ['Stay a little longer', 9.8],
+      ['Hold on', null],
+      ['The harbour falls asleep behind us', 14.25],
+      ['You already know how it ends', null],
+    ]);
+    // The line before stays selected: "set & next" as it finishes times the new line.
+    expect(lineButton('Stay a little longer')).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(latest.map((l) => l.text)).toEqual(lines.map((l) => l.text));
+    // An empty new line is not added.
+    await userEvent.click(screen.getByRole('button', { name: 'Add a line after' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Line text' }), '{Enter}');
+    expect(latest).toHaveLength(3);
+  });
+
+  it('deletes a line, then undo brings it back', async () => {
+    render(<Editable ctrl={new FakeAudio()} />);
+    await userEvent.click(lineButton('The harbour falls asleep behind us'));
+    await userEvent.click(screen.getByRole('button', { name: 'Delete the line' }));
+    expect(latest.map((l) => l.id)).toEqual(['a', 'c']);
+    expect(lineButton('You already know how it ends')).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(latest.map((l) => l.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('editing the whole .lrc as text', () => {
+  const openText = async () => {
+    await userEvent.click(screen.getByRole('tab', { name: '.lrc text' }));
+    return screen.getByRole('textbox', { name: 'Content of the .lrc file' }) as HTMLTextAreaElement;
+  };
+
+  it('shows the lines as LRC, applies edits, and keeps unchanged lines as they were', async () => {
+    render(<Editable ctrl={new FakeAudio()} />);
+    const text = await openText();
+    expect(text.value).toBe(
+      '[ti:Stay]\n[00:09.80]Stay a little longer\n[00:14.25]The harbour falls asleep behind us\nYou already know how it ends\n',
+    );
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    fireEvent.change(text, {
+      target: { value: '[ti:Stay]\n[ar:Someone]\n[00:09.80]Stay a little longer\n[00:15.00]The harbour sleeps\n[00:19.50]You already know how it ends\n' },
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(latest[0]).toBe(lines[0]);
+    expect(latest.slice(1).map((l) => [l.text, l.time, l.source])).toEqual([
+      ['The harbour sleeps', 15, 'manual'],
+      ['You already know how it ends', 19.5, 'manual'],
+    ]);
+    expect(latestMetadata).toMatchObject({ title: 'Stay', artist: 'Someone' });
+    // Undo takes back the whole edit.
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(latest).toEqual(lines);
+  });
+
+  it('applies the text when going back to the list, and refuses text without lyrics', async () => {
+    render(<Editable ctrl={new FakeAudio()} />);
+    const text = await openText();
+    fireEvent.change(text, { target: { value: '[ti:Stay]\n' } });
+    await userEvent.click(screen.getByRole('tab', { name: 'List' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('no lyric lines');
+    expect(latest).toEqual(lines);
+    await userEvent.click(screen.getByRole('button', { name: 'Revert' }));
+    fireEvent.change(text, { target: { value: text.value.replace('Stay a little longer', 'Stay longer') } });
+    await userEvent.click(screen.getByRole('tab', { name: 'List' }));
+    expect(lineButton('Stay longer')).toBeInTheDocument();
+  });
+
+  it('exports what was typed, applied first', async () => {
+    const onExport = vi.fn();
+    render(<Editable ctrl={new FakeAudio()} onExport={onExport} />);
+    const text = await openText();
+    fireEvent.change(text, { target: { value: text.value.replace('[00:09.80]', '[00:09.00]') } });
+    await userEvent.click(screen.getByRole('button', { name: 'Export .lrc' }));
+    expect(onExport).toHaveBeenCalledOnce();
+    expect(onExport.mock.calls[0]![0].lines[0]).toMatchObject({ text: 'Stay a little longer', time: 9 });
+    expect(latest[0]!.time).toBe(9);
   });
 });

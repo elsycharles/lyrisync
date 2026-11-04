@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AudioController } from '../audio/AudioController';
 import { usePlaybackSelector, usePlaying } from '../audio/usePlayback';
 import { spaceToggleProps } from '../hooks/useSpaceToggle';
 import { useI18n } from '../i18n/useI18n';
 import { RELIABLE } from '../lib/confidence';
+import { insertLineAfter, removeLine, setLineText } from '../lib/lineEdits';
 import { formatTimestamp } from '../lib/time';
 import { activeLineIndex, outOfOrderIds } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
@@ -18,13 +19,16 @@ export function isToCheck(line: LyricLine): boolean {
 interface Props {
   lines: LyricLine[];
   ctrl: AudioController;
-  /** Enables in-place fixing: select a line, nudge it, time it from the playhead. */
+  /** Enables in-place fixing: select a line, nudge it, time it, edit its text. */
   onEdit?: (lines: LyricLine[]) => void;
   onUndo?: () => void;
   /** Controlled selection (the result screen's transport moves it too). */
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
 }
+
+/** The line whose text is being typed: an existing one, or a new one after `afterId`. */
+type Editing = { kind: 'edit'; id: string } | { kind: 'add'; afterId: string };
 
 /**
  * The synced lyrics. The line being sung is highlighted in mint. Click a line to select
@@ -43,13 +47,17 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
   const editable = !!onEdit;
   const edit = useLineEditing({ lines, ctrl, onEdit, onUndo, selectedId, setSelectedId });
   const outOfOrder = useMemo(() => outOfOrderIds(lines), [lines]);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  // After Enter or Escape in a text field, the focus goes back to that line.
+  const refocus = useRef<string | null>(null);
 
   // Follow the sung line while playing, unless the user is busy with a line of their own.
   useEffect(() => {
     if (!playing || active < 0 || selectedId) return;
-    const el = listRef.current?.children[active] as HTMLElement | undefined;
+    const id = lines[active]?.id;
+    const el = id ? listRef.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`) : null;
     el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [active, playing, selectedId]);
+  }, [active, lines, playing, selectedId]);
 
   // Keep the selected line in view when it changes from the keyboard.
   useEffect(() => {
@@ -57,6 +65,34 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
     const el = listRef.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(selectedId)}"]`);
     el?.scrollIntoView({ block: 'nearest' });
   }, [selectedId]);
+
+  useEffect(() => {
+    if (editing || !refocus.current) return;
+    listRef.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(refocus.current)}"] > .line`)?.focus();
+    refocus.current = null;
+  }, [editing]);
+
+  const finishEditing = (text: string | null, byKey: boolean) => {
+    if (!editing) return;
+    if (editing.kind === 'edit') {
+      if (text !== null) onEdit?.(setLineText(lines, editing.id, text));
+      if (byKey) refocus.current = editing.id;
+    } else {
+      // A new line is only added once it has a text; the line before stays selected, so
+      // "set & next" pressed as it finishes gives the new line its start.
+      const index = lines.findIndex((l) => l.id === editing.afterId);
+      if (text !== null && text.trim() && index >= 0) onEdit?.(insertLineAfter(lines, index, text).lines);
+      if (byKey) refocus.current = editing.afterId;
+    }
+    setEditing(null);
+  };
+
+  const deleteLine = (id: string) => {
+    const index = lines.findIndex((l) => l.id === id);
+    const out = removeLine(lines, id);
+    onEdit?.(out);
+    setSelectedId((out[index] ?? out[index - 1])?.id ?? null);
+  };
 
   return (
     <ol className="lines lines--scroll" ref={listRef} aria-label={t.result.linesLabel} {...spaceToggleProps(() => ctrl.toggle())}>
@@ -73,46 +109,124 @@ export function LyricList({ lines, ctrl, onEdit, onUndo, selectedId: controlledI
         ]
           .filter(Boolean)
           .join(' ');
+        const editingThis = editing?.kind === 'edit' && editing.id === line.id;
         return (
-          <li key={line.id} data-id={line.id}>
-            <button
-              type="button"
-              className={classes}
-              aria-current={isActive ? 'true' : undefined}
-              aria-pressed={editable ? isSelected : undefined}
-              disabled={!editable && untimed}
-              onClick={() => {
-                if (editable) setSelectedId(isSelected ? null : line.id);
-                else if (line.time !== null) ctrl.seek(line.time);
-              }}
-              onDoubleClick={() => {
-                if (editable) setSelectedId(line.id);
-                edit.play(line);
-              }}
-            >
-              <time>{untimed ? '—' : formatTimestamp(line.time!)}</time>
-              <span className="line__text">{line.text}</span>
-              {untimed && <span className="flag">{t.result.needsTiming}</span>}
-              {!untimed && outOfOrder.has(line.id) && <span className="flag flag--warn">{t.editor.outOfOrder}</span>}
-              {!untimed && !outOfOrder.has(line.id) && isToCheck(line) && (
-                <span className="flag flag--check">{line.estimated ? t.result.estimated : t.result.toCheck}</span>
+          <Fragment key={line.id}>
+            <li data-id={line.id}>
+              {editingThis ? (
+                <LineTextField time={line.time} initial={line.text} onDone={finishEditing} />
+              ) : (
+                <button
+                  type="button"
+                  className={classes}
+                  aria-current={isActive ? 'true' : undefined}
+                  aria-pressed={editable ? isSelected : undefined}
+                  disabled={!editable && untimed}
+                  onClick={() => {
+                    if (editable) setSelectedId(isSelected ? null : line.id);
+                    else if (line.time !== null) ctrl.seek(line.time);
+                  }}
+                  onDoubleClick={() => {
+                    if (editable) setSelectedId(line.id);
+                    edit.play(line);
+                  }}
+                >
+                  <time>{untimed ? '—' : formatTimestamp(line.time!)}</time>
+                  <span className="line__text">{line.text}</span>
+                  {untimed && <span className="flag">{t.result.needsTiming}</span>}
+                  {!untimed && outOfOrder.has(line.id) && <span className="flag flag--warn">{t.editor.outOfOrder}</span>}
+                  {!untimed && !outOfOrder.has(line.id) && isToCheck(line) && (
+                    <span className="flag flag--check">{line.estimated ? t.result.estimated : t.result.toCheck}</span>
+                  )}
+                </button>
               )}
-            </button>
-            {editable && isSelected && (
-              <LineTools
-                line={line}
-                isFirst={i === 0}
-                isLast={i === lines.length - 1}
-                onNudge={(d) => edit.nudge(line.id, d)}
-                onSetNext={() => edit.setNext(line.id)}
-                onPlay={() => edit.play(line)}
-                onPrevious={edit.previous}
-                onNext={edit.next}
-              />
+              {editable && isSelected && !editing && (
+                <LineTools
+                  line={line}
+                  isFirst={i === 0}
+                  isLast={i === lines.length - 1}
+                  onNudge={(d) => edit.nudge(line.id, d)}
+                  onSetNext={() => edit.setNext(line.id)}
+                  onPlay={() => edit.play(line)}
+                  onPrevious={edit.previous}
+                  onNext={edit.next}
+                  onEditText={() => setEditing({ kind: 'edit', id: line.id })}
+                  onAddAfter={() => setEditing({ kind: 'add', afterId: line.id })}
+                  onDelete={() => deleteLine(line.id)}
+                  canDelete={lines.length > 1}
+                />
+              )}
+            </li>
+            {editing?.kind === 'add' && editing.afterId === line.id && (
+              <li>
+                <LineTextField time={null} initial="" placeholder={t.editor.newLine} onDone={finishEditing} />
+              </li>
             )}
-          </li>
+          </Fragment>
         );
       })}
     </ol>
+  );
+}
+
+/**
+ * A line's text, typed in place. Enter or leaving the field saves, Escape cancels;
+ * `onDone` gets the text (null when cancelled) and whether a key ended it.
+ */
+function LineTextField({
+  time,
+  initial,
+  placeholder,
+  onDone,
+}: {
+  time: number | null;
+  initial: string;
+  placeholder?: string;
+  onDone: (text: string | null, byKey: boolean) => void;
+}) {
+  const { t } = useI18n();
+  const [value, setValue] = useState(initial);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const done = useRef(false);
+  const finish = (save: boolean, byKey: boolean) => {
+    if (done.current) return;
+    done.current = true;
+    const text = value.trim();
+    onDone(save && text && text !== initial ? text : null, byKey);
+  };
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  return (
+    <form
+      className="line line--selected line--editing"
+      onSubmit={(e) => {
+        e.preventDefault();
+        finish(true, true);
+      }}
+    >
+      <time>{time === null ? '—' : formatTimestamp(time)}</time>
+      <input
+        ref={inputRef}
+        className="line__input"
+        value={value}
+        placeholder={placeholder}
+        aria-label={t.editor.lineText}
+        enterKeyHint="done"
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key !== 'Escape') return;
+          e.preventDefault();
+          finish(false, true);
+        }}
+        onBlur={() => finish(true, false)}
+      />
+      <span className="line__keys" aria-hidden="true">
+        {t.editor.editKeys}
+      </span>
+    </form>
   );
 }
