@@ -3,7 +3,7 @@ import { useI18n } from '../i18n/useI18n';
 import { formatTimestamp } from '../lib/time';
 import { activeLineIndex, previousTimedIndex } from '../lib/timing';
 import type { LyricLine } from '../lib/types';
-import { NextLineIcon, PlayIcon, PrevLineIcon, TargetIcon } from './icons';
+import { NextLineIcon, PencilIcon, PlayIcon, PlusIcon, PrevLineIcon, TargetIcon, TrashIcon } from './icons';
 
 const NUDGES_BEFORE = [-1, -0.1];
 const NUDGES_AFTER = [0.1, 1];
@@ -20,13 +20,20 @@ interface Props {
   onPrevious: () => void;
   /** Selects the next line, sets nothing, and takes the music to it. */
   onNext: () => void;
+  onEditText: () => void;
+  /** Adds a line right after this one (its text is typed in place). */
+  onAddAfter: () => void;
+  onDelete: () => void;
+  canDelete: boolean;
 }
 
 /**
  * The tools of the selected line: its start with ±0.1 s / ±1 s nudges, then moving
- * between lines with the music, and "set & next", pressed as the line finishes.
+ * between lines with the music, "set & next" (pressed as the line finishes), and its
+ * text: edit, add a line after it, delete it (small icons, so the row stays light).
  */
-export function LineTools({ line, isFirst, isLast, onNudge, onSetNext, onPlay, onPrevious, onNext }: Props) {
+export function LineTools(props: Props) {
+  const { line, isFirst, isLast, onNudge, onSetNext, onPlay, onPrevious, onNext } = props;
   const { t } = useI18n();
   const untimed = line.time === null;
   const nudgeButton = (d: number) => (
@@ -57,6 +64,24 @@ export function LineTools({ line, isFirst, isLast, onNudge, onSetNext, onPlay, o
         <button type="button" className="tool-btn tool-btn--main" onClick={onSetNext} disabled={isLast} title={t.editor.setNextHint}>
           <TargetIcon size={14} /> {t.editor.setNext}
         </button>
+        <span className="line-tools__edit">
+          <button type="button" className="tool-btn tool-btn--icon" onClick={props.onEditText} aria-label={t.editor.editText} title={t.editor.editText}>
+            <PencilIcon size={15} />
+          </button>
+          <button type="button" className="tool-btn tool-btn--icon" onClick={props.onAddAfter} aria-label={t.editor.addLine} title={t.editor.addLine}>
+            <PlusIcon size={15} />
+          </button>
+          <button
+            type="button"
+            className="tool-btn tool-btn--icon tool-btn--danger"
+            onClick={props.onDelete}
+            disabled={!props.canDelete}
+            aria-label={t.editor.deleteLine}
+            title={t.editor.deleteLine}
+          >
+            <TrashIcon size={15} />
+          </button>
+        </span>
       </div>
     </div>
   );

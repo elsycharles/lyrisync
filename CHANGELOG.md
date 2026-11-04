@@ -35,6 +35,9 @@ All notable changes to this project are documented here. The format follows
     "Previous" (Backspace) / "Next" (N) line tools that set nothing;
   - a speed control (1×, 0.75×, 0.5×) in the player, and a warning on a line timed
     before the previous one;
+  - a line's text can be edited in place, a line added after it or the line deleted
+    (three small icons in its tools), and the whole file can be edited as .lrc text
+    ("List | .lrc text"); every change can be undone;
   - a pasted or imported .lrc opens straight on the review screen, and lyrics can be
     imported from a .txt or .lrc file. The "time the lines myself" mode is gone: every
     line is timed automatically, then fixed here;
@@ -63,6 +66,8 @@ All notable changes to this project are documented here. The format follows
 - The stage keeps its height between the intro and the lines, so the player under it
   does not jump.
 - The line being played is always shown in green, even when it is selected.
+- LRC lines without a timestamp stay where they are in the file instead of moving to
+  the end.
 - The sync progress bar no longer jumps backwards (stage weights, growing download
   totals and late worker events are folded so that progress only goes up).
 

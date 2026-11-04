@@ -25,7 +25,8 @@ LyriSync takes lyrics you already have and an audio file, and puts a timestamp o
 - **One screen to check and fix.** Listen with the lyrics on screen, then fix lines in place while the music plays:
   - "Set & next" (C) as a line finishes: the next one starts at that moment;
   - "Previous" / "Next" (Backspace / N) move between lines, the music with them;
-  - ±0.1 s / ±1 s nudges per line, a slower playback speed, and undo.
+  - ±0.1 s / ±1 s nudges per line, a slower playback speed, and undo;
+  - edit a line's text in place, add a line after it or delete it, or edit the whole file as .lrc text.
 - **Private and free.** The audio never leaves the device. There is no backend, so there is no cost per use and no usage cap.
 - **Installable and offline.** It is a PWA. After the first run, the models and the app work without a connection.
 - **Interface in French and English**, with light and dark themes.

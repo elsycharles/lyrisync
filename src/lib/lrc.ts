@@ -14,14 +14,16 @@ export interface ParsedLrc {
 /**
  * Parses an .lrc file. Handles several timestamps on one line (repeated choruses),
  * the [offset:] tag, enhanced-LRC word tags (dropped, line timing kept) and
- * untimed lines (kept, with time null).
+ * untimed lines (kept with time null, after the timed line they follow in the file).
  */
 export function parseLrc(text: string): ParsedLrc {
   const metadata: LrcMetadata = {};
   let offsetMs = 0;
   const timed: { time: number; text: string; order: number }[] = [];
-  const untimed: { text: string; order: number }[] = [];
+  // Untimed lines, by the timed entry they follow in the file (-1: before any).
+  const untimedAfter = new Map<number, string[]>();
   let order = 0;
+  let lastTimed = -1;
 
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
@@ -59,26 +61,29 @@ export function parseLrc(text: string): ParsedLrc {
 
     const lyric = rest.replace(WORD_TAG, '').replace(TIME_TAG, '').replace(/\s+/g, ' ').trim();
     if (times.length === 0) {
-      if (lyric) untimed.push({ text: lyric, order: order++ });
+      if (lyric) untimedAfter.set(lastTimed, [...(untimedAfter.get(lastTimed) ?? []), lyric]);
       continue;
     }
     // An empty timed line marks the end of the previous one (instrumental break): skip it.
     if (!lyric) continue;
     for (const t of times) timed.push({ time: t, text: lyric, order: order++ });
+    lastTimed = order - 1;
   }
 
   // A positive offset makes lyrics appear sooner.
   const shift = offsetMs / 1000;
   timed.sort((a, b) => a.time - b.time || a.order - b.order);
 
-  const lines: LyricLine[] = timed.map((l) => ({
-    id: createId(),
-    text: l.text,
-    time: Math.max(0, Math.round((l.time - shift) * 100) / 100),
-    source: 'import',
-  }));
-  // Untimed lines go after timed ones, in file order; the editor shows them as "needs timing".
-  for (const l of untimed) lines.push({ id: createId(), text: l.text, time: null, source: null });
+  // Untimed lines stay where they were, shown as "needs timing".
+  const lines: LyricLine[] = [];
+  const pushUntimed = (after: number) => {
+    for (const text of untimedAfter.get(after) ?? []) lines.push({ id: createId(), text, time: null, source: null });
+  };
+  pushUntimed(-1);
+  for (const l of timed) {
+    lines.push({ id: createId(), text: l.text, time: Math.max(0, Math.round((l.time - shift) * 100) / 100), source: 'import' });
+    pushUntimed(l.order);
+  }
 
   return { lines, metadata };
 }
@@ -118,6 +123,19 @@ export function serializeLrc(lines: LyricLine[], options: SerializeOptions = {})
     .sort((a, b) => a.l.time - b.l.time || a.i - b.i);
 
   for (const { l } of timed) out.push(`[${formatTimestamp(l.time)}]${l.text}`);
+  return out.join('\n') + '\n';
+}
+
+/**
+ * The lines as LRC text to edit by hand: the title, artist and album tags, then every
+ * line in list order, "[mm:ss.cc]text", or the bare text for a line with no time yet.
+ */
+export function lrcForEditing(lines: readonly LyricLine[], metadata: LrcMetadata = {}): string {
+  const out: string[] = [];
+  if (metadata.title) out.push(`[ti:${clean(metadata.title)}]`);
+  if (metadata.artist) out.push(`[ar:${clean(metadata.artist)}]`);
+  if (metadata.album) out.push(`[al:${clean(metadata.album)}]`);
+  for (const l of lines) out.push(l.time === null ? l.text : `[${formatTimestamp(l.time)}]${l.text}`);
   return out.join('\n') + '\n';
 }
 

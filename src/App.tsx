@@ -11,6 +11,7 @@ import { downloadText, safeFileName } from './lib/download';
 import { parseLrc, serializeLrc } from './lib/lrc';
 import { parseLyrics } from './lib/lyrics';
 import { fillMissingTimes } from './lib/timing';
+import type { LrcMetadata, LyricLine } from './lib/types';
 import { initialProject, projectReducer } from './state/project';
 import { resolveLanguage, useSettings } from './state/settings';
 import { useSyncPipeline } from './state/useSyncPipeline';
@@ -73,11 +74,15 @@ export function App() {
     }
   }, [lang, pipeline, project.audio, project.lyricsText, settings]);
 
-  const exportLrc = useCallback(() => {
-    const lines = fillMissingTimes(project.lines, project.audio?.duration ?? undefined);
-    const text = serializeLrc(lines, { metadata: project.metadata, tool: `LyriSync ${__APP_VERSION__}` });
-    downloadText(`${safeFileName(project.metadata.title ?? '')}.lrc`, text);
-  }, [project.lines, project.audio?.duration, project.metadata]);
+  const exportLrc = useCallback(
+    (current?: { lines: LyricLine[]; metadata: LrcMetadata }) => {
+      const source = current ?? { lines: project.lines, metadata: project.metadata };
+      const lines = fillMissingTimes(source.lines, project.audio?.duration ?? undefined);
+      const text = serializeLrc(lines, { metadata: source.metadata, tool: `LyriSync ${__APP_VERSION__}` });
+      downloadText(`${safeFileName(source.metadata.title ?? '')}.lrc`, text);
+    },
+    [project.lines, project.audio?.duration, project.metadata],
+  );
 
   const restart = useCallback(() => {
     if (hasWork && !window.confirm(t.result.restartConfirm)) return;
