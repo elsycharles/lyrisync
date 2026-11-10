@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.5] — 2026-11-10
+
+### Fixed
+
+- 0.4.4 still redirected: Cloudflare Pages strips `.html` from the resolved
+  asset even when reached through a rewrite, not just the request path. The
+  verification content now has no `.html` extension at all, with its
+  `Content-Type` set explicitly, so nothing about it triggers the platform's
+  automatic redirect.
+
 ## [0.4.4] — 2026-11-10
 
 ### Fixed

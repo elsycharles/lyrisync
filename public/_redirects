@@ -1,5 +1,5 @@
-# Cloudflare Pages 308-redirects any real *.html asset to its extensionless
-# URL, and Google explicitly rejects a redirected site-verification file.
-# So the real content lives at a different path, and this rewrite (200, no
-# redirect) serves it at the exact URL Google expects.
-/googlec2224002b644f670.html /google-verify-content.html 200
+# Cloudflare Pages 308-redirects any *.html asset (even one reached by a
+# rewrite) to its extensionless URL, and Google rejects a redirected
+# site-verification file. So the real content has no .html extension at
+# all, and is rewritten (200, no redirect) onto the exact URL Google expects.
+/googlec2224002b644f670.html /google-verify-content 200
