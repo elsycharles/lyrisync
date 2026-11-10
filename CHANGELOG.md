@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.3] — 2026-11-10
+
+### Fixed
+
+- The Google Search Console verification file was served through a redirect
+  (Cloudflare Pages strips the `.html` extension by default), which Google
+  rejects. It now serves directly, with no redirect.
+
 ## [0.4.2] — 2026-11-10
 
 ### Added
