@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.2] — 2026-11-10
+
+### Added
+
+- Google Search Console site verification file, so the site can be referenced in
+  Google's index.
+
 ## [0.4.1] — 2026-11-04
 
 ### Fixed
