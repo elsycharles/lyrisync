@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.4] — 2026-11-10
+
+### Fixed
+
+- The 0.4.3 fix didn't work: a redirect rule pointing a path at itself is a
+  no-op on Cloudflare Pages, so the `.html`-stripping redirect still won.
+  The verification content now lives at a different path and is rewritten
+  (not redirected) onto the exact URL Google expects.
+
 ## [0.4.3] — 2026-11-10
 
 ### Fixed
